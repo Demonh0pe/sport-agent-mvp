@@ -1,7 +1,7 @@
 """Match Tool: Agent 访问赛事数据的'手' (真实数据库版)。"""
 import logging
 from typing import Optional
-from sqlalchemy import or_, and_
+from sqlalchemy import or_, and_, func
 from sqlalchemy.future import select
 from src.infra.db.session import AsyncSessionLocal
 from src.infra.db.models import Team, Match
@@ -43,17 +43,25 @@ class MatchTool:
                 return f"系统提示：未在数据库中找到名为“{team_name}”的球队。（可能是数据库暂无数据，或名称拼写错误）"
 
             # 2. 查库 - 优先返回已完成的比赛，不足时补充未来的比赛
+            # ✅ 只返回来自API的真实数据，过滤掉Seed/Mock数据
             async with AsyncSessionLocal() as session:
                 # 先查询已完成的比赛（按日期降序）
+                # 为了避免SQL兼容性问题，我们查询更多数据，然后在Python层面过滤
                 finished_stmt = select(Match).where(
                     and_(
                         or_(Match.home_team_id == team_id, Match.away_team_id == team_id),
                         Match.status == "FINISHED"
                     )
-                ).order_by(Match.match_date.desc()).limit(limit)
+                ).order_by(Match.match_date.desc()).limit(limit * 3)  # 查询3倍数据以确保过滤后足够
                 
                 result = await session.execute(finished_stmt)
-                matches = list(result.scalars().all())
+                all_finished = list(result.scalars().all())
+                
+                # ✅ 在Python层面过滤：只保留包含'ImportedFromAPI'标签的真实数据
+                matches = [
+                    m for m in all_finished 
+                    if m.tags and 'ImportedFromAPI' in m.tags
+                ][:limit]  # 只取前limit条
                 
                 # 如果已完成比赛数量不足，补充未来的比赛
                 if len(matches) < limit:
@@ -62,10 +70,18 @@ class MatchTool:
                             or_(Match.home_team_id == team_id, Match.away_team_id == team_id),
                             Match.status == "FIXTURE"
                         )
-                    ).order_by(Match.match_date.asc()).limit(limit - len(matches))
+                    ).order_by(Match.match_date.asc()).limit((limit - len(matches)) * 3)
                     
                     result = await session.execute(fixture_stmt)
-                    matches.extend(list(result.scalars().all()))
+                    all_fixtures = list(result.scalars().all())
+                    
+                    # ✅ 同样在Python层面过滤
+                    filtered_fixtures = [
+                        m for m in all_fixtures
+                        if m.tags and 'ImportedFromAPI' in m.tags
+                    ][:limit - len(matches)]  # 只取需要的数量
+                    
+                    matches.extend(filtered_fixtures)
 
             if not matches:
                 return f"数据库中暂无 {team_name} 的近期比赛记录。"

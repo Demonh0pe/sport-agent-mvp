@@ -25,6 +25,7 @@ from src.agent.prompts.loader import PromptLoader
 from src.agent.tools.match_tool import match_tool
 from src.agent.tools.stats_tool import stats_tool
 from src.agent.tools.standings_tool import standings_tool
+from src.agent.tools.prediction_tool import prediction_tool
 
 # Mock 工具
 from src.agent.tools.mock_responses import MockToolResponses
@@ -61,10 +62,10 @@ class AgentServiceV2:
         self._real_tools = {
             "MatchResolverTool": match_tool.get_recent_matches,
             "StatsAnalysisTool": stats_tool.get_team_stats,
-            "StandingsTool": standings_tool.get_team_standing,  # ✅ 新增积分榜工具
+            "StandingsTool": standings_tool.get_team_standing,
+            "PredictionTool": prediction_tool.predict_match,  # ✅ 新增预测工具
             # 后续添加：
             # "NewsTool": news_tool.search_news,
-            # "PredictionTool": prediction_tool.predict,
         }
         
         logger.info(f"AgentServiceV2 initialized with {len(self._real_tools)} real tools")
@@ -262,6 +263,50 @@ class AgentServiceV2:
             )
             return result
         
+        elif tool_name == "StandingsTool":
+            # 从参数或查询中提取球队名称和联赛名称
+            team_name = (
+                parsed_step.raw_params.get("team_name") or 
+                self._extract_team_name(context.get("query", ""))
+            )
+            league_name = parsed_step.raw_params.get("league_name")
+            
+            if not team_name:
+                return "系统提示: 无法识别球队名称。"
+            
+            # 调用真实工具
+            result = await tool_func(
+                team_name=team_name,
+                league_name=league_name
+            )
+            return result
+        
+        elif tool_name == "PredictionTool":
+            # 从参数或查询中提取主队和客队名称
+            query_text = context.get("query", "")
+            
+            # 尝试从参数获取
+            home_team = parsed_step.raw_params.get("home_team")
+            away_team = parsed_step.raw_params.get("away_team")
+            league_name = parsed_step.raw_params.get("league")
+            
+            # 如果参数中没有，尝试从查询中解析
+            if not home_team or not away_team:
+                teams = self._extract_two_teams(query_text)
+                if teams:
+                    home_team, away_team = teams
+            
+            if not home_team or not away_team:
+                return "系统提示: 无法识别比赛双方球队，请明确指出主队和客队。"
+            
+            # 调用预测工具
+            result = await tool_func(
+                home_team_name=home_team,
+                away_team_name=away_team,
+                league_name=league_name
+            )
+            return result
+        
         else:
             # 其他真实工具的调用逻辑
             return await tool_func(**parsed_step.raw_params)
@@ -404,6 +449,10 @@ class AgentServiceV2:
             "阿森纳", "Arsenal", "ARS",
             "曼城", "Manchester City", "MCI",
             "切尔西", "Chelsea", "CHE",
+            "拜仁", "Bayern München", "FCB",
+            "多特", "Borussia Dortmund", "BVB",
+            "皇马", "Real Madrid", "RMA",
+            "巴萨", "Barcelona", "BAR",
         ]
         
         query_lower = query.lower()
@@ -412,4 +461,36 @@ class AgentServiceV2:
                 return team
         
         return ""
+    
+    def _extract_two_teams(self, query: str) -> tuple:
+        """
+        从查询中提取两个球队名称
+        用于预测查询，如 "曼联对利物浦"
+        
+        Returns:
+            (home_team, away_team) 或 None
+        """
+        known_teams = [
+            ("曼联", "Manchester United"),
+            ("利物浦", "Liverpool"),
+            ("阿森纳", "Arsenal"),
+            ("曼城", "Manchester City"),
+            ("切尔西", "Chelsea"),
+            ("拜仁", "Bayern München"),
+            ("多特", "Borussia Dortmund"),
+            ("皇马", "Real Madrid"),
+            ("巴萨", "Barcelona"),
+        ]
+        
+        found_teams = []
+        query_lower = query.lower()
+        
+        for cn_name, en_name in known_teams:
+            if cn_name in query or en_name.lower() in query_lower:
+                found_teams.append(en_name)  # 统一使用英文名
+        
+        if len(found_teams) >= 2:
+            return (found_teams[0], found_teams[1])
+        
+        return None
 

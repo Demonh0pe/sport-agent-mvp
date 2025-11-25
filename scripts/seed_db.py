@@ -1,5 +1,26 @@
 """
-数据播种脚本 (Data Seeding Script)
+⚠️⚠️⚠️ 警告: 此脚本已废弃！请勿使用！ ⚠️⚠️⚠️
+
+【废弃原因】
+此脚本会创建虚假测试数据，导致与真实API数据混淆，影响Agent输出的准确性。
+
+【已知问题】
+1. 使用动态时间生成数据，与真实比赛时间冲突
+2. 没有明确标记为测试数据
+3. 与真实API数据混合在同一数据库中
+
+【替代方案】
+1. 单元测试: 使用 Mock 数据 (src/agent/tools/mock_responses.py)
+2. 集成测试: 使用独立的测试数据库
+3. 开发环境: 直接使用 football-data.org API 拉取真实数据
+
+【如需执行】
+如果你确实需要运行此脚本（例如在隔离的测试环境），请:
+1. 确保使用独立的测试数据库
+2. 在代码中注释掉下方的 RuntimeError
+3. 运行后记得清理数据
+
+数据播种脚本 (Data Seeding Script) - DEPRECATED
 作用：向数据库注入符合 v2.0 Schema 的初始测试数据。
 包含：英超联赛、4支豪门球队、2场典型比赛、1个测试用户、1条相关新闻。
 """
@@ -16,6 +37,18 @@ from src.infra.db.session import AsyncSessionLocal
 from src.infra.db.models import League, Team, Match, User, News
 
 async def seed_data():
+    raise RuntimeError(
+        "\n" + "=" * 80 + "\n"
+        "❌ 此脚本已禁用！请勿在生产环境运行。\n\n"
+        "【原因】会创建虚假测试数据，与真实API数据混淆。\n\n"
+        "【替代方案】\n"
+        "1. 单元测试: 使用 Mock 数据 (src/agent/tools/mock_responses.py)\n"
+        "2. 集成测试: 使用独立的测试数据库\n"
+        "3. 开发环境: 使用 scripts/ingest_football_data_v2.py 拉取真实数据\n\n"
+        "详见: docs/DATA_AUTHENTICITY_AUDIT.md\n"
+        + "=" * 80
+    )
+    
     async with AsyncSessionLocal() as db:
         print("开始执行数据播种 (Data Seeding)...")
 

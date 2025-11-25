@@ -72,11 +72,13 @@ def plan_decomposition(user_query: str) -> List[str]:
     # C. 预测模块
     is_sport_prediction = True
     if "F1" in user_query or "状态" in user_query or "差距" in user_query:
-        if "预测" not in user_query and "概率" not in user_query:
+        if "预测" not in user_query and "概率" not in user_query and "赢" not in user_query:
             is_sport_prediction = False
 
     if is_sport_prediction:
-        if any(k in user_query for k in ["预测", "概率", "赢", "胜", "推荐", "策略"]):
+        # 检测是否需要预测
+        prediction_keywords = ["预测", "概率", "赢", "胜", "输", "推荐", "策略", "谁会", "哪个", "哪队", "结果"]
+        if any(k in user_query for k in prediction_keywords):
             steps.append("PredictionTool(match_id=$match_id, phase='T-24h')")
         
         if "score_prediction" in intents:
