@@ -1,0 +1,66 @@
+tools:
+  - name: MatchResolverTool
+    description: 将自然语言描述解析为 match_id 与必要上下文
+    endpoint: http://localhost:8080/api/v1/agent/match-resolver
+    method: POST
+    params: [query, league_hint, date_hint]
+  - name: StatsAnalysisTool
+    description: 输出球队/球员多维统计与近期状态
+    endpoint: http://localhost:8080/api/v1/analysis/stats
+    method: GET
+    params: [match_id, scope, window]
+  - name: HistoricalComparisonTool
+    description: 汇总 H2H、主客场差异、关键球员对比
+    endpoint: http://localhost:8080/api/v1/analysis/history
+    method: GET
+    params: [match_id, window]
+  - name: TacticalInsightTool
+    description: 分析阵型、战术风格及教练策略
+    endpoint: http://localhost:8080/api/v1/analysis/tactics
+    method: GET
+    params: [match_id]
+  - name: LiveFeedTool
+    description: 返回赛中实时数据与异常提醒
+    endpoint: http://localhost:8080/api/v1/analysis/live
+    method: GET
+    params: [match_id]
+  - name: PostMatchReviewTool
+    description: 赛后事件回顾与预测对比
+    endpoint: http://localhost:8080/api/v1/analysis/review
+    method: GET
+    params: [match_id]
+  - name: PredictionTool
+    description: 查询并解释指定比赛的胜平负概率
+    endpoint: http://localhost:8080/api/v1/prediction
+    method: GET
+    params: [match_id, phase]
+  - name: ScorelinePredictorTool
+    description: 给出比分及区间概率
+    endpoint: http://localhost:8080/api/v1/prediction/scoreline
+    method: GET
+    params: [match_id]
+  - name: EventPredictorTool
+    description: 输出进球/角球/牌等事件概率
+    endpoint: http://localhost:8080/api/v1/prediction/events
+    method: GET
+    params: [match_id, event_type]
+  - name: NewsTool
+    description: 获取球队/比赛相关的最新资讯与情绪
+    endpoint: http://localhost:8080/api/v1/news
+    method: GET
+    params: [entity_id, entity_type, window_hours]
+  - name: OddsTool
+    description: 对比市场盘口并识别异常波动
+    endpoint: http://localhost:8080/api/v1/odds
+    method: GET
+    params: [match_id]
+  - name: LLMAugmentorTool
+    description: 结合定性信息生成 Chain-of-Thought 推理与解释
+    endpoint: http://localhost:8080/api/v1/agent/llm-augment
+    method: POST
+    params: [context, evidence]
+  - name: StrategyTool
+    description: 根据风险偏好输出策略建议
+    endpoint: http://localhost:8080/api/v1/agent/strategy
+    method: POST
+    params: [preference, context]

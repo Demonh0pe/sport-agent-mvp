@@ -1,0 +1,15 @@
+default:
+  host: localhost
+  port: 5432
+  user: sport_agent
+  password: changeme
+  database: sport_agent
+  schema: public
+
+analytics:
+  host: localhost
+  port: 5433
+  user: sport_agent_analytics
+  password: changeme
+  database: sport_agent_analytics
+  schema: analytics

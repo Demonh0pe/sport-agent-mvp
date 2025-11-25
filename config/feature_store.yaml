@@ -1,0 +1,16 @@
+match_features:
+  storage: parquet
+  path: data/features/match/
+  primary_keys: ["match_id", "phase"]
+  ttl_hours: 24
+  cache:
+    backend: redis
+    url: redis://localhost:6379/0
+
+team_snapshot:
+  storage: parquet
+  path: data/features/team/
+
+player_snapshot:
+  storage: parquet
+  path: data/features/player/

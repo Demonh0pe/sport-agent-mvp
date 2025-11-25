@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+.build/
+dist/
+
+# Virtual env
+.venv/
+.env
+
+# Data artifacts
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/features/*
+!data/features/.gitkeep
+
+# Notebooks
+.ipynb_checkpoints/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Models
+model_registry/*
+!model_registry/.gitkeep
+!model_registry/xgb_match_outcome_v1/
+model_registry/xgb_match_outcome_v1/*
+!model_registry/xgb_match_outcome_v1/.gitkeep

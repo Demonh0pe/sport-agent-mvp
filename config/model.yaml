@@ -1,0 +1,11 @@
+prediction:
+  active_version: xgb_match_outcome_v1
+  registry_path: model_registry/xgb_match_outcome_v1/model.bin
+  fallback: elo_diff_baseline
+  calibration:
+    method: isotonic
+    last_updated: 2025-11-01T00:00:00Z
+
+elo_diff_baseline:
+  k_factor: 24
+  home_advantage: 65

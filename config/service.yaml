@@ -1,0 +1,35 @@
+agent:
+  enable_trace: true
+  timeout: 30
+  max_turns: 6  
+
+  llm:
+    provider: "deepseek"
+    base_url: "https://api.deepseek.com"
+    api_key: "sk-6b888a778aad47c0bf5383eb7e89f18b"
+    model: "deepseek-chat"
+    temperature: 0.7
+
+
+
+api:
+  host: "0.0.0.0"
+  port: 8080
+  log_level: "info"
+  enable_docs: true # 确保这个也有，因为代码里定义了 ApiConfig 需要它
+
+prediction_service: # 确保这些也有，不然还会报 prediction_service 缺字段
+  cache_ttl_seconds: 3600
+  default_phase: "T-24h"
+  cold_start_threshold: 5
+
+news_service: # 确保这些也有
+  default_window_hours: 48
+  max_items: 10
+
+data_source:
+  football_data_org:
+    base_url: "https://api.football-data.org/v4"
+    api_key: "bca39e59efb74c0da0d4a98eb66416e6"
+    enabled: true
+

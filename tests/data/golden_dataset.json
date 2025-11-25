@@ -1,0 +1,213 @@
+[
+  {
+    "id": "Q1",
+    "difficulty": "easy",
+    "question": "巴萨下一场对手是谁？能给一份胜平负概率吗？",
+    "expected_tools": [
+      {"tool": "MatchResolverTool", "arguments": {"query": "Barcelona next match"}},
+      {"tool": "PredictionTool", "arguments": {"match_id": "__resolved__", "phase": "T-24h"}}
+    ],
+    "answer_key": ["列出下一场对手", "给出 home/draw/away 概率"]
+  },
+  {
+    "id": "Q2",
+    "difficulty": "easy",
+    "question": "C罗这周进球了吗？",
+    "expected_tools": [
+      {"tool": "NewsTool", "arguments": {"entity_id": "Cristiano Ronaldo", "entity_type": "player", "window_hours": 72}}
+    ],
+    "answer_key": ["提及所参加的比赛", "说明进球数或未进球", "引用资讯来源"]
+  },
+  {
+    "id": "Q3",
+    "difficulty": "medium",
+    "question": "曼联和利物浦最近5次交锋哪支更占优势？",
+    "expected_tools": [
+      {"tool": "MatchResolverTool", "arguments": {"query": "Manchester United vs Liverpool"}},
+      {"tool": "HistoricalComparisonTool", "arguments": {"match_id": "__resolved__", "window": 5}}
+    ],
+    "answer_key": ["提供最近5次交锋战绩", "指出哪队占优", "强调主客场差异"]
+  },
+  {
+    "id": "Q4",
+    "difficulty": "medium",
+    "question": "国米最近的战术有没有变化？",
+    "expected_tools": [
+      {"tool": "MatchResolverTool", "arguments": {"query": "Inter Milan recent matches"}},
+      {"tool": "TacticalInsightTool", "arguments": {"match_id": "__resolved__"}}
+    ],
+    "answer_key": ["描述阵型/战术风格变动", "引用近期比赛数据"]
+  },
+  {
+    "id": "Q5",
+    "difficulty": "medium",
+    "question": "皇马这周末的比分大概会是多少？",
+    "expected_tools": [
+      {"tool": "MatchResolverTool", "arguments": {"query": "Real Madrid weekend match"}},
+      {"tool": "ScorelinePredictorTool", "arguments": {"match_id": "__resolved__"}}
+    ],
+    "answer_key": ["列出最可能的比分", "说明概率或置信度"]
+  },
+  {
+    "id": "Q6",
+    "difficulty": "medium",
+    "question": "尤文这段时间角球表现如何？",
+    "expected_tools": [
+      {"tool": "MatchResolverTool", "arguments": {"query": "Juventus last 5 matches"}},
+      {"tool": "EventPredictorTool", "arguments": {"match_id": "__resolved__", "event_type": "corners"}},
+      {"tool": "StatsAnalysisTool", "arguments": {"match_id": "__resolved__", "scope": "team", "window": "last5"}}
+    ],
+    "answer_key": ["提及场均角球数", "对比联赛平均", "指出趋势"]
+  },
+  {
+    "id": "Q7",
+    "difficulty": "hard",
+    "question": "拜仁如果今天比赛控球率突然下降，是否意味着战局失控？",
+    "expected_tools": [
+      {"tool": "MatchResolverTool", "arguments": {"query": "Bayern live match"}},
+      {"tool": "LiveFeedTool", "arguments": {"match_id": "__resolved__"}},
+      {"tool": "LLMAugmentorTool", "arguments": {"context": "live stats vs pre-match expectations", "evidence": []}}
+    ],
+    "answer_key": ["引用实时控球率与赛前预期对比", "解释下降原因", "提供是否失控的结论"]
+  },
+  {
+    "id": "Q8",
+    "difficulty": "hard",
+    "question": "梅西和小内马尔最近谁的状态更好？",
+    "expected_tools": [
+      {"tool": "StatsAnalysisTool", "arguments": {"match_id": "__pseudo__", "scope": "player", "window": "last5"}},
+      {"tool": "NewsTool", "arguments": {"entity_id": "Lionel Messi", "entity_type": "player", "window_hours": 168}},
+      {"tool": "NewsTool", "arguments": {"entity_id": "Neymar Jr", "entity_type": "player", "window_hours": 168}}
+    ],
+    "answer_key": ["比较进球助攻等数据", "提及伤病/状态新闻", "给出综合结论"]
+  },
+  {
+    "id": "Q9",
+    "difficulty": "easy",
+    "question": "马德里德比的赔率有没有异常波动？",
+    "expected_tools": [
+      {"tool": "MatchResolverTool", "arguments": {"query": "Madrid derby"}},
+      {"tool": "OddsTool", "arguments": {"match_id": "__resolved__"}}
+    ],
+    "answer_key": ["提供主流庄家赔率", "指出是否存在异常", "解释可能原因"]
+  },
+  {
+    "id": "Q10",
+    "difficulty": "medium",
+    "question": "阿森纳 vs 热刺 这场比赛的黄牌可能会很多吗？",
+    "expected_tools": [
+      {"tool": "MatchResolverTool", "arguments": {"query": "Arsenal vs Tottenham"}},
+      {"tool": "EventPredictorTool", "arguments": {"match_id": "__resolved__", "event_type": "cards"}},
+      {"tool": "HistoricalComparisonTool", "arguments": {"match_id": "__resolved__", "window": 5}}
+    ],
+    "answer_key": ["给出黄牌概率或区间", "引用历史德比平均值"]
+  },
+  {
+    "id": "Q11",
+    "difficulty": "hard",
+    "question": "巴黎这波连胜是否可持续？请结合赛程和体能。",
+    "expected_tools": [
+      {"tool": "MatchResolverTool", "arguments": {"query": "PSG recent form"}},
+      {"tool": "StatsAnalysisTool", "arguments": {"match_id": "__resolved__", "scope": "team", "window": "last5"}},
+      {"tool": "NewsTool", "arguments": {"entity_id": "PSG", "entity_type": "team", "window_hours": 168}},
+      {"tool": "StrategyTool", "arguments": {"preference": "balanced", "context": "sustain streak"}}
+    ],
+    "answer_key": ["提及连胜场次", "分析赛程密度/伤病", "给出是否可持续意见"]
+  },
+  {
+    "id": "Q12",
+    "difficulty": "medium",
+    "question": "马竞 vs 瓦伦的大小球怎么看？",
+    "expected_tools": [
+      {"tool": "MatchResolverTool", "arguments": {"query": "Atletico vs Valencia"}},
+      {"tool": "EventPredictorTool", "arguments": {"match_id": "__resolved__", "event_type": "goals"}}
+    ],
+    "answer_key": ["提供进球数区间概率", "指出推荐方向"]
+  },
+  {
+    "id": "Q13",
+    "difficulty": "hard",
+    "question": "德甲保级大战谁更紧张？请结合舆论和战绩。",
+    "expected_tools": [
+      {"tool": "MatchResolverTool", "arguments": {"query": "Bundesliga relegation battle"}},
+      {"tool": "StatsAnalysisTool", "arguments": {"match_id": "__resolved__", "scope": "team", "window": "last5"}},
+      {"tool": "NewsTool", "arguments": {"entity_id": "__team1__", "entity_type": "team", "window_hours": 168}},
+      {"tool": "NewsTool", "arguments": {"entity_id": "__team2__", "entity_type": "team", "window_hours": 168}},
+      {"tool": "LLMAugmentorTool", "arguments": {"context": "form + media sentiment", "evidence": []}}
+    ],
+    "answer_key": ["比较两队战绩", "描述媒体压力", "给出结论"]
+  },
+  {
+    "id": "Q14",
+    "difficulty": "medium",
+    "question": "米兰德比的主客场差异明显吗？",
+    "expected_tools": [
+      {"tool": "MatchResolverTool", "arguments": {"query": "Milan derby"}},
+      {"tool": "HistoricalComparisonTool", "arguments": {"match_id": "__resolved__", "window": 10}}
+    ],
+    "answer_key": ["提供主客场胜率对比", "指出差异程度"]
+  },
+  {
+    "id": "Q15",
+    "difficulty": "easy",
+    "question": "切尔西最新的伤病名单是什么？",
+    "expected_tools": [
+      {"tool": "NewsTool", "arguments": {"entity_id": "Chelsea", "entity_type": "team", "window_hours": 72, "category": "injury"}}
+    ],
+    "answer_key": ["列出伤病球员", "注明恢复时间或状态"]
+  },
+  {
+    "id": "Q16",
+    "difficulty": "medium",
+    "question": "阿根廷国家队这次集训的阵容有啥亮点？",
+    "expected_tools": [
+      {"tool": "NewsTool", "arguments": {"entity_id": "Argentina", "entity_type": "team", "window_hours": 168, "category": "official"}},
+      {"tool": "StatsAnalysisTool", "arguments": {"match_id": "__pseudo__", "scope": "player", "window": "season"}}
+    ],
+    "answer_key": ["提到入选球员亮点", "引用官方发布"]
+  },
+  {
+    "id": "Q17",
+    "difficulty": "hard",
+    "question": "F1 迈凯伦本周升级有效吗？结合赛道特性分析。",
+    "expected_tools": [
+      {"tool": "NewsTool", "arguments": {"entity_id": "McLaren", "entity_type": "team", "window_hours": 168}},
+      {"tool": "StatsAnalysisTool", "arguments": {"match_id": "__pseudo__", "scope": "team", "window": "season"}},
+      {"tool": "LLMAugmentorTool", "arguments": {"context": "upgrade + track profile", "evidence": []}}
+    ],
+    "answer_key": ["提及升级点", "结合赛道特点分析成效"]
+  },
+  {
+    "id": "Q18",
+    "difficulty": "medium",
+    "question": "湖人最近主场和客场表现差距大吗？",
+    "expected_tools": [
+      {"tool": "StatsAnalysisTool", "arguments": {"match_id": "__pseudo__", "scope": "team", "window": "last10"}},
+      {"tool": "HistoricalComparisonTool", "arguments": {"match_id": "__pseudo__", "window": 10}}
+    ],
+    "answer_key": ["比较主客场胜率/效率", "给出结论"]
+  },
+  {
+    "id": "Q19",
+    "difficulty": "easy",
+    "question": "多特 vs 莱比锡 的推荐策略是偏保守还是激进？",
+    "expected_tools": [
+      {"tool": "MatchResolverTool", "arguments": {"query": "Dortmund vs Leipzig"}},
+      {"tool": "PredictionTool", "arguments": {"match_id": "__resolved__", "phase": "T-24h"}},
+      {"tool": "StrategyTool", "arguments": {"preference": "balanced", "context": "Dortmund vs Leipzig"}}
+    ],
+    "answer_key": ["引用概率", "给出策略倾向"]
+  },
+  {
+    "id": "Q20",
+    "difficulty": "hard",
+    "question": "曼城如果失去德布劳内，预测会怎么调整？",
+    "expected_tools": [
+      {"tool": "MatchResolverTool", "arguments": {"query": "Manchester City next match"}},
+      {"tool": "NewsTool", "arguments": {"entity_id": "Kevin De Bruyne", "entity_type": "player", "window_hours": 72, "category": "injury"}},
+      {"tool": "PredictionTool", "arguments": {"match_id": "__resolved__", "phase": "T-24h"}},
+      {"tool": "LLMAugmentorTool", "arguments": {"context": "injury impact on features", "evidence": []}}
+    ],
+    "answer_key": ["说明德布劳内情况", "描述模型如何调整", "给出新的置信度"]
+  }
+]

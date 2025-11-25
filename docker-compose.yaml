@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # 1. 核心数据库 (PostgreSQL) - 存放比赛、球队、用户偏好
+  db:
+    image: postgres:15-alpine
+    container_name: sport_agent_db
+    restart: always
+    environment:
+      POSTGRES_USER: sport_agent
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: sport_agent
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sport_agent"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. 缓存与特征存储 (Redis)
+  redis:
+    image: redis:7-alpine
+    container_name: sport_agent_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # 3. 数据库管理界面 (Adminer) 
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
+  redis_data:
