@@ -9,8 +9,12 @@ from datetime import datetime
 
 sys.path.append(os.getcwd())
 
-from src.services.api.services.agent_v2 import agent_service
+from src.services.api.dependencies import get_agent_service_v2
+from src.services.api.schemas.agent import AgentQuery
 from loguru import logger
+
+# 获取 Agent 服务实例
+agent_service = get_agent_service_v2()
 
 # 配置logger只显示错误
 logger.remove()
@@ -68,24 +72,22 @@ def format_answer(response):
 
 def format_execution_details(response):
     """格式化执行详情"""
-    if not response.execution_steps:
+    if not response.tool_traces:
         return
     
     print("📊 执行详情:")
-    print(f"   ⏱️  总耗时: {response.total_execution_time_ms}ms")
-    print(f"   🔧 工具调用: {len(response.execution_steps)} 个")
+    print(f"   🔧 工具调用: {len(response.tool_traces)} 个")
     print()
     
-    for i, step in enumerate(response.execution_steps, 1):
-        status_icon = "✅" if step.status == "success" else "❌"
-        print(f"   {i}. {status_icon} {step.tool_name}")
-        print(f"      ⏱️  耗时: {step.execution_time_ms}ms")
+    for i, trace in enumerate(response.tool_traces, 1):
+        print(f"   {i}. ✅ {trace.tool_name}")
+        print(f"      ⏱️  耗时: {trace.latency_ms}ms")
         
         # 截取输出的前100个字符
-        if step.output and len(str(step.output)) > 100:
-            output_preview = str(step.output)[:100] + "..."
+        if trace.output_snippet and len(str(trace.output_snippet)) > 100:
+            output_preview = str(trace.output_snippet)[:100] + "..."
         else:
-            output_preview = str(step.output) if step.output else "(无输出)"
+            output_preview = str(trace.output_snippet) if trace.output_snippet else "(无输出)"
         
         print(f"      📤 输出: {output_preview}")
         print()
@@ -98,7 +100,9 @@ async def process_query(query: str):
         print("\n⏳ 正在思考...", end="", flush=True)
         
         start_time = datetime.now()
-        response = await agent_service.process_query(query)
+        # 创建查询对象
+        query_obj = AgentQuery(query=query)
+        response = await agent_service.run_query(query_obj)
         end_time = datetime.now()
         
         # 清除"正在思考"提示

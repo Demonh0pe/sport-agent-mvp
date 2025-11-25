@@ -7,12 +7,16 @@ import os
 
 sys.path.append(os.getcwd())
 
-from src.services.api.services.agent_v2 import agent_service
+from src.services.api.dependencies import get_agent_service_v2
+from src.services.api.schemas.agent import AgentQuery
 from loguru import logger
 
 # 禁用日志输出
 logger.remove()
 logger.add(sys.stderr, level="ERROR")
+
+# 获取 Agent 服务实例
+agent_service = get_agent_service_v2()
 
 
 async def chat():
@@ -37,7 +41,8 @@ async def chat():
             
             # 处理查询
             print("🤖 Agent: ", end="", flush=True)
-            response = await agent_service.process_query(query)
+            query_obj = AgentQuery(query=query)
+            response = await agent_service.run_query(query_obj)
             print(response.answer)
             print()
             

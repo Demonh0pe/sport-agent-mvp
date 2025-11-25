@@ -8,12 +8,16 @@ import json
 
 sys.path.append(os.getcwd())
 
-from src.services.api.services.agent_v2 import agent_service
+from src.services.api.dependencies import get_agent_service_v2
+from src.services.api.schemas.agent import AgentQuery
 from loguru import logger
 
 # 配置logger显示详细日志
 logger.remove()
 logger.add(sys.stderr, level="DEBUG", format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | {message}")
+
+# 获取 Agent 服务实例
+agent_service = get_agent_service_v2()
 
 
 async def chat_debug():
@@ -40,7 +44,8 @@ async def chat_debug():
             print("🔍 开始处理查询")
             print("=" * 80)
             
-            response = await agent_service.process_query(query)
+            query_obj = AgentQuery(query=query)
+            response = await agent_service.run_query(query_obj)
             
             print("\n" + "=" * 80)
             print("📋 执行计划")
@@ -53,27 +58,26 @@ async def chat_debug():
             print("=" * 80)
             print("🔧 工具执行详情")
             print("=" * 80)
-            for i, step in enumerate(response.execution_steps, 1):
-                print(f"\n[工具 {i}] {step.tool_name}")
-                print(f"状态: {step.status}")
-                print(f"耗时: {step.execution_time_ms}ms")
-                
-                if step.input_params:
-                    print(f"输入参数:")
-                    print(json.dumps(step.input_params, indent=2, ensure_ascii=False))
-                
-                if step.output:
-                    print(f"输出:")
-                    output_str = str(step.output)
-                    if len(output_str) > 500:
-                        print(output_str[:500] + "...")
-                    else:
-                        print(output_str)
-                
-                if step.error:
-                    print(f"❌ 错误: {step.error}")
-                
-                print("-" * 80)
+            if response.tool_traces:
+                for i, trace in enumerate(response.tool_traces, 1):
+                    print(f"\n[工具 {i}] {trace.tool_name}")
+                    print(f"耗时: {trace.latency_ms}ms")
+                    
+                    if trace.input_payload:
+                        print(f"输入参数:")
+                        print(json.dumps(trace.input_payload, indent=2, ensure_ascii=False))
+                    
+                    if trace.output_snippet:
+                        print(f"输出:")
+                        output_str = str(trace.output_snippet)
+                        if len(output_str) > 500:
+                            print(output_str[:500] + "...")
+                        else:
+                            print(output_str)
+                    
+                    print("-" * 80)
+            else:
+                print("(无工具执行记录)")
             
             print("\n" + "=" * 80)
             print("💬 最终回答")
@@ -82,7 +86,8 @@ async def chat_debug():
             print()
             
             print("=" * 80)
-            print(f"⏱️  总耗时: {response.total_execution_time_ms}ms")
+            print("🔧 推理信息:")
+            print(response.reasoning)
             print("=" * 80 + "\n")
             
         except KeyboardInterrupt:
