@@ -4,10 +4,10 @@ agent:
   max_turns: 6  
 
   llm:
-    provider: "deepseek"
-    base_url: "https://api.deepseek.com"
-    api_key: "sk-6b888a778aad47c0bf5383eb7e89f18b"
-    model: "deepseek-chat"
+    provider: "ollama"  # 使用本地Ollama
+    base_url: "http://localhost:11434/v1"  # Ollama的OpenAI兼容endpoint
+    api_key: "not_required_for_ollama"
+    model: "qwen2.5:3b"
     temperature: 0.7
 
 

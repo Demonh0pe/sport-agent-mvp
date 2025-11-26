@@ -23,7 +23,7 @@ agent_service = get_agent_service_v2()
 async def chat_debug():
     """调试模式聊天"""
     print("\n" + "=" * 80)
-    print("🔧 Sport Agent - 调试模式")
+    print("Sport Agent - 调试模式")
     print("=" * 80)
     print("显示所有工具调用、参数和输出")
     print("输入 'exit' 退出")
@@ -31,24 +31,24 @@ async def chat_debug():
     
     while True:
         try:
-            query = input("\n💬 问题: ").strip()
+            query = input("\n[问题]: ").strip()
             
             if not query:
                 continue
             
             if query.lower() in ['exit', 'quit', 'q']:
-                print("\n👋 退出\n")
+                print("\n退出\n")
                 break
             
             print("\n" + "=" * 80)
-            print("🔍 开始处理查询")
+            print("[开始处理查询]")
             print("=" * 80)
             
             query_obj = AgentQuery(query=query)
             response = await agent_service.run_query(query_obj)
             
             print("\n" + "=" * 80)
-            print("📋 执行计划")
+            print("[执行计划]")
             print("=" * 80)
             if hasattr(response, 'plan_steps') and response.plan_steps:
                 for i, step in enumerate(response.plan_steps, 1):
@@ -56,7 +56,7 @@ async def chat_debug():
             print()
             
             print("=" * 80)
-            print("🔧 工具执行详情")
+            print("[工具执行详情]")
             print("=" * 80)
             if response.tool_traces:
                 for i, trace in enumerate(response.tool_traces, 1):
@@ -80,21 +80,21 @@ async def chat_debug():
                 print("(无工具执行记录)")
             
             print("\n" + "=" * 80)
-            print("💬 最终回答")
+            print("[最终回答]")
             print("=" * 80)
             print(response.answer)
             print()
             
             print("=" * 80)
-            print("🔧 推理信息:")
+            print("[推理信息]:")
             print(response.reasoning)
             print("=" * 80 + "\n")
             
         except KeyboardInterrupt:
-            print("\n\n👋 退出\n")
+            print("\n\n退出\n")
             break
         except Exception as e:
-            print(f"\n❌ 错误: {str(e)}\n")
+            print(f"\n[错误]: {str(e)}\n")
             import traceback
             traceback.print_exc()
 

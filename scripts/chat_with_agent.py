@@ -24,14 +24,14 @@ logger.add(sys.stderr, level="ERROR")
 def print_header():
     """打印欢迎界面"""
     print("\n" + "=" * 80)
-    print("🤖 Sport Agent MVP - 交互式问答系统")
+    print("Sport Agent MVP - 交互式问答系统")
     print("=" * 80)
-    print("\n💡 使用说明:")
+    print("使用说明:")
     print("   - 输入你的问题，按回车提交")
     print("   - 输入 'exit' 或 'quit' 或 'q' 退出")
     print("   - 输入 'clear' 清屏")
     print("   - 输入 'help' 查看示例问题")
-    print("\n🎯 示例问题:")
+    print("示例问题:")
     print("   • 曼联最近5场比赛的战绩如何？")
     print("   • 预测一下曼城和阿森纳的比赛")
     print("   • 利物浦在英超中处于什么地位？")
@@ -42,7 +42,7 @@ def print_header():
 def print_help():
     """打印帮助信息"""
     print("\n" + "=" * 80)
-    print("📚 示例问题")
+    print("示例问题")
     print("=" * 80)
     print("\n【比赛预测】")
     print("   • 曼联对利物浦，谁会赢？")
@@ -64,7 +64,7 @@ def print_help():
 def format_answer(response):
     """格式化Agent的回答"""
     print("\n" + "─" * 80)
-    print("🤖 Agent回答:")
+    print("Agent回答:")
     print("─" * 80)
     print(response.answer)
     print()
@@ -75,13 +75,13 @@ def format_execution_details(response):
     if not response.tool_traces:
         return
     
-    print("📊 执行详情:")
-    print(f"   🔧 工具调用: {len(response.tool_traces)} 个")
+    print("执行详情:")
+    print(f"   工具调用: {len(response.tool_traces)} 个")
     print()
     
     for i, trace in enumerate(response.tool_traces, 1):
-        print(f"   {i}. ✅ {trace.tool_name}")
-        print(f"      ⏱️  耗时: {trace.latency_ms}ms")
+        print(f"   {i}. {trace.tool_name}")
+        print(f"      耗时: {trace.latency_ms}ms")
         
         # 截取输出的前100个字符
         if trace.output_snippet and len(str(trace.output_snippet)) > 100:
@@ -89,7 +89,7 @@ def format_execution_details(response):
         else:
             output_preview = str(trace.output_snippet) if trace.output_snippet else "(无输出)"
         
-        print(f"      📤 输出: {output_preview}")
+        print(f"      [输出]: {output_preview}")
         print()
 
 
@@ -97,7 +97,7 @@ async def process_query(query: str):
     """处理用户查询"""
     try:
         # 显示处理提示
-        print("\n⏳ 正在思考...", end="", flush=True)
+        print("\n[正在思考...]", end="", flush=True)
         
         start_time = datetime.now()
         # 创建查询对象
@@ -116,14 +116,14 @@ async def process_query(query: str):
         
         # 显示总耗时
         total_time = (end_time - start_time).total_seconds()
-        print(f"⏱️  总响应时间: {total_time:.2f}秒")
+        print(f"[耗时]: {total_time:.2f}秒")
         print("─" * 80 + "\n")
         
     except KeyboardInterrupt:
-        print("\n\n⚠️  查询被中断")
+        print("\n\n[中断] 查询被中断")
         raise
     except Exception as e:
-        print("\n\n❌ 查询失败:")
+        print("\n\n[错误] 查询失败:")
         print(f"   错误: {str(e)}")
         print("   请检查日志获取详细信息\n")
 
@@ -135,14 +135,14 @@ async def main():
     while True:
         try:
             # 获取用户输入
-            query = input("💬 你的问题: ").strip()
+            query = input("[你的问题]: ").strip()
             
             # 处理命令
             if not query:
                 continue
             
             if query.lower() in ['exit', 'quit', 'q']:
-                print("\n👋 再见！感谢使用Sport Agent MVP\n")
+                print("\n再见！感谢使用Sport Agent MVP\n")
                 break
             
             if query.lower() == 'clear':
@@ -158,13 +158,13 @@ async def main():
             await process_query(query)
             
         except KeyboardInterrupt:
-            print("\n\n👋 再见！感谢使用Sport Agent MVP\n")
+            print("\n\n再见！感谢使用Sport Agent MVP\n")
             break
         except EOFError:
-            print("\n\n👋 再见！感谢使用Sport Agent MVP\n")
+            print("\n\n再见！感谢使用Sport Agent MVP\n")
             break
         except Exception as e:
-            print(f"\n❌ 发生错误: {str(e)}\n")
+            print(f"\n[错误] 发生错误: {str(e)}\n")
             continue
 
 

@@ -34,11 +34,11 @@ async def check_database_connection():
         async with AsyncSessionLocal() as db:
             result = await db.execute(text("SELECT version()"))
             version = result.scalar()
-            print("✅ 数据库连接成功")
-            print(f"📌 PostgreSQL版本: {version.split(',')[0]}\n")
+            print("[OK] 数据库连接成功")
+            print(f"[INFO] PostgreSQL版本: {version.split(',')[0]}\n")
             return True
     except Exception as e:
-        print(f"❌ 数据库连接失败: {e}")
+        print(f"[ERROR] 数据库连接失败: {e}")
         return False
 
 
@@ -68,7 +68,7 @@ async def get_table_counts(db: AsyncSession):
 async def show_leagues(db: AsyncSession):
     """显示所有联赛"""
     print("=" * 80)
-    print("🏆 联赛列表")
+    print("联赛列表")
     print("=" * 80)
     
     stmt = select(League).order_by(League.league_name)
@@ -76,10 +76,10 @@ async def show_leagues(db: AsyncSession):
     leagues = result.scalars().all()
     
     if not leagues:
-        print("  ⚠️  未找到联赛数据")
+        print("  [WARN] 未找到联赛数据")
     else:
         for league in leagues:
-            print(f"\n  📌 {league.league_name}")
+            print(f"\n  [*] {league.league_name}")
             print(f"     ID: {league.league_id}")
             print(f"     国家: {league.country}")
             print(f"     级别: {league.level}")
@@ -91,7 +91,7 @@ async def show_leagues(db: AsyncSession):
 async def show_teams(db: AsyncSession, league_id: Optional[str] = None):
     """显示球队列表"""
     print("=" * 80)
-    print("⚽ 球队列表")
+    print("球队列表")
     print("=" * 80)
     
     stmt = select(Team)
@@ -103,13 +103,13 @@ async def show_teams(db: AsyncSession, league_id: Optional[str] = None):
     teams = result.scalars().all()
     
     if not teams:
-        print("  ⚠️  未找到球队数据")
+        print("  [WARN] 未找到球队数据")
     else:
         current_league = None
         for team in teams:
             if team.league_id != current_league:
                 current_league = team.league_id
-                print(f"\n  【{current_league}】")
+                print(f"\n  [{current_league}]")
             print(f"    - {team.team_name} ({team.team_id})")
     
     print(f"\n  总计: {len(teams)} 支球队")
@@ -120,7 +120,7 @@ async def show_teams(db: AsyncSession, league_id: Optional[str] = None):
 async def show_recent_matches(db: AsyncSession, limit: int = 20):
     """显示最近的比赛"""
     print("=" * 80)
-    print(f"⚽ 最近 {limit} 场比赛")
+    print(f"最近 {limit} 场比赛")
     print("=" * 80)
     
     stmt = (
@@ -133,7 +133,7 @@ async def show_recent_matches(db: AsyncSession, limit: int = 20):
     matches = result.scalars().all()
     
     if not matches:
-        print("  ⚠️  未找到比赛数据")
+        print("  [WARN] 未找到比赛数据")
     else:
         print(f"\n  {'日期':<12} {'主队':<20} {'比分':<10} {'客队':<20} {'状态':<10}")
         print("  " + "-" * 80)
@@ -141,13 +141,13 @@ async def show_recent_matches(db: AsyncSession, limit: int = 20):
         for match in matches:
             date_str = match.match_date.strftime("%Y-%m-%d") if match.match_date else "N/A"
             score = f"{match.home_score or '-'}:{match.away_score or '-'}"
-            status_emoji = "✅" if match.status == "FINISHED" else "⏳"
+            status_mark = "[OK]" if match.status == "FINISHED" else "[PENDING]"
             
             # 获取球队名称
             home_name = match.home_team_id
             away_name = match.away_team_id
             
-            print(f"  {date_str:<12} {home_name:<20} {score:^10} {away_name:<20} {status_emoji} {match.status:<10}")
+            print(f"  {date_str:<12} {home_name:<20} {score:^10} {away_name:<20} {status_mark} {match.status:<10}")
     
     print("=" * 80)
     print()
@@ -156,7 +156,7 @@ async def show_recent_matches(db: AsyncSession, limit: int = 20):
 async def show_standings(db: AsyncSession, league_id: Optional[str] = None, limit: int = 10):
     """显示积分榜"""
     print("=" * 80)
-    print("📊 积分榜")
+    print("积分榜")
     print("=" * 80)
     
     stmt = select(Standing, Team.team_name).join(Team, Standing.team_id == Team.team_id)
@@ -170,7 +170,7 @@ async def show_standings(db: AsyncSession, league_id: Optional[str] = None, limi
     standings = result.all()
     
     if not standings:
-        print("  ⚠️  未找到积分榜数据")
+        print("  [WARN] 未找到积分榜数据")
     else:
         current_league = None
         print(f"\n  {'排名':<6} {'球队':<25} {'赛':<4} {'胜':<4} {'平':<4} {'负':<4} {'进':<5} {'失':<5} {'净胜':<6} {'积分':<6}")
@@ -179,7 +179,7 @@ async def show_standings(db: AsyncSession, league_id: Optional[str] = None, limi
         for standing, team_name in standings:
             if standing.league_id != current_league:
                 current_league = standing.league_id
-                print(f"\n  【{current_league}】")
+                print(f"\n  [{current_league}]")
             
             print(f"  {standing.position:<6} {team_name:<25} {standing.played_games:<4} {standing.won:<4} "
                   f"{standing.draw:<4} {standing.lost:<4} {standing.goals_for:<5} {standing.goals_against:<5} "
@@ -192,7 +192,7 @@ async def show_standings(db: AsyncSession, league_id: Optional[str] = None, limi
 async def show_match_statistics(db: AsyncSession):
     """显示比赛统计信息"""
     print("=" * 80)
-    print("📈 比赛统计")
+    print("比赛统计")
     print("=" * 80)
     
     # 按状态统计
@@ -202,8 +202,8 @@ async def show_match_statistics(db: AsyncSession):
     
     print("\n  比赛状态分布:")
     for status, count in status_counts.items():
-        emoji = "✅" if status == "FINISHED" else "⏳" if status == "SCHEDULED" else "🔄"
-        print(f"    {emoji} {status:<15} {count:>6,} 场")
+        mark = "[OK]" if status == "FINISHED" else "[PENDING]" if status == "SCHEDULED" else "[ACTIVE]"
+        print(f"    {mark} {status:<15} {count:>6,} 场")
     
     # 按联赛统计
     stmt = select(Match.league_id, func.count()).group_by(Match.league_id)
@@ -212,7 +212,7 @@ async def show_match_statistics(db: AsyncSession):
     
     print("\n  联赛比赛数量:")
     for league_id, count in league_counts.items():
-        print(f"    📌 {league_id:<15} {count:>6,} 场")
+        print(f"    [*] {league_id:<15} {count:>6,} 场")
     
     # 时间范围
     stmt = select(
@@ -234,7 +234,7 @@ async def show_match_statistics(db: AsyncSession):
 async def show_data_quality(db: AsyncSession):
     """显示数据质量信息"""
     print("=" * 80)
-    print("🔍 数据质量检查")
+    print("数据质量检查")
     print("=" * 80)
     
     # 检查没有比赛的球队
@@ -246,7 +246,7 @@ async def show_data_quality(db: AsyncSession):
     result = await db.execute(stmt)
     teams_without_matches = result.scalar()
     
-    print(f"\n  ⚠️  没有比赛记录的球队: {teams_without_matches}")
+    print(f"\n  [WARN] 没有比赛记录的球队: {teams_without_matches}")
     
     # 检查完成但没有比分的比赛
     stmt = select(func.count()).where(
@@ -256,7 +256,7 @@ async def show_data_quality(db: AsyncSession):
     result = await db.execute(stmt)
     finished_without_score = result.scalar()
     
-    print(f"  ⚠️  已完成但缺少比分的比赛: {finished_without_score}")
+    print(f"  [WARN] 已完成但缺少比分的比赛: {finished_without_score}")
     
     # 检查积分榜覆盖
     stmt = select(func.count(func.distinct(Standing.league_id)))
@@ -267,7 +267,7 @@ async def show_data_quality(db: AsyncSession):
     result = await db.execute(stmt)
     total_leagues = result.scalar()
     
-    print(f"  ✅ 有积分榜的联赛: {leagues_with_standings}/{total_leagues}")
+    print(f"  [OK] 有积分榜的联赛: {leagues_with_standings}/{total_leagues}")
     
     print("=" * 80)
     print()
@@ -283,7 +283,7 @@ async def show_specific_table(db: AsyncSession, table_name: str):
     }
     
     if table_name not in table_mapping:
-        print(f"❌ 未知表名: {table_name}")
+        print(f"[ERROR] 未知表名: {table_name}")
         print(f"   可用的表: {', '.join(table_mapping.keys())}")
         return
     
@@ -371,7 +371,7 @@ async def main():
         if args.table:
             await show_specific_table(db, args.table)
     
-    print("\n✅ 查询完成！")
+    print("\n[OK] 查询完成！")
 
 
 if __name__ == "__main__":

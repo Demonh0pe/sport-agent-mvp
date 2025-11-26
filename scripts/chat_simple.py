@@ -22,7 +22,7 @@ agent_service = get_agent_service_v2()
 async def chat():
     """简单的聊天循环"""
     print("\n" + "=" * 60)
-    print("🤖 Sport Agent - 简洁对话模式")
+    print("Sport Agent - 简洁对话模式")
     print("=" * 60)
     print("输入问题开始对话，输入 'exit' 退出")
     print("=" * 60 + "\n")
@@ -30,27 +30,27 @@ async def chat():
     while True:
         try:
             # 获取输入
-            query = input("❓ 你: ").strip()
+            query = input("[你]: ").strip()
             
             if not query:
                 continue
             
             if query.lower() in ['exit', 'quit', 'q']:
-                print("\n👋 再见!\n")
+                print("\n再见!\n")
                 break
             
             # 处理查询
-            print("🤖 Agent: ", end="", flush=True)
+            print("[Agent]: ", end="", flush=True)
             query_obj = AgentQuery(query=query)
             response = await agent_service.run_query(query_obj)
             print(response.answer)
             print()
             
         except KeyboardInterrupt:
-            print("\n\n👋 再见!\n")
+            print("\n\n再见!\n")
             break
         except Exception as e:
-            print(f"\n❌ 错误: {str(e)}\n")
+            print(f"\n[错误]: {str(e)}\n")
 
 
 if __name__ == "__main__":

@@ -108,5 +108,45 @@ class MatchTool:
             logger.error(f"Get matches failed: {e}")
             return f"系统错误：查询比赛数据失败 ({str(e)})"
 
+    async def get_head_to_head_matches(self, team_a_name: str, team_b_name: str, limit: int = 5):
+        """
+        【历史交锋】
+        查询两支球队的历史交锋记录
+        """
+        try:
+            # 1. 解析球队ID
+            team_a_id = await self.lookup_team_id(team_a_name)
+            team_b_id = await self.lookup_team_id(team_b_name)
+            
+            if not team_a_id or not team_b_id:
+                return []
+            
+            # 2. 查询交锋记录
+            async with AsyncSessionLocal() as session:
+                stmt = select(Match).where(
+                    and_(
+                        or_(
+                            and_(Match.home_team_id == team_a_id, Match.away_team_id == team_b_id),
+                            and_(Match.home_team_id == team_b_id, Match.away_team_id == team_a_id)
+                        ),
+                        Match.status == "FINISHED"
+                    )
+                ).order_by(Match.match_date.desc()).limit(limit * 3)
+                
+                result = await session.execute(stmt)
+                all_matches = list(result.scalars().all())
+                
+                # 过滤真实数据
+                matches = [
+                    m for m in all_matches 
+                    if m.tags and 'ImportedFromAPI' in m.tags
+                ][:limit]
+                
+                return matches
+                
+        except Exception as e:
+            logger.error(f"Get H2H failed: {e}")
+            return []
+
 # 单例导出
 match_tool = MatchTool()
