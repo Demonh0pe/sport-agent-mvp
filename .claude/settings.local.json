@@ -6,7 +6,10 @@
       "Bash(tree:*)",
       "Bash(cat:*)",
       "WebSearch",
-      "Bash(claude config list:*)"
+      "Bash(claude config list:*)",
+      "Bash(python:*)",
+      "Bash(pip3 install:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
