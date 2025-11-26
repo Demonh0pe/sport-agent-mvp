@@ -30,6 +30,9 @@ from src.agent.tools.prediction_tool import prediction_tool
 # Mock 工具
 from src.agent.tools.mock_responses import MockToolResponses
 
+# 实体解析器
+from src.data_pipeline.entity_resolver import entity_resolver
+
 if TYPE_CHECKING:
     from src.shared.config import Settings
 
@@ -57,6 +60,8 @@ class AgentServiceV2:
         # 初始化组件
         self._parameter_resolver = ParameterResolver()
         self._mock_responses = MockToolResponses()
+        self._entity_resolver = entity_resolver
+        self._entity_resolver_initialized = False
         
         # 工具注册表：哪些工具已实现真实数据
         self._real_tools = {
@@ -69,6 +74,12 @@ class AgentServiceV2:
         }
         
         logger.info(f"AgentServiceV2 initialized with {len(self._real_tools)} real tools")
+    
+    async def _ensure_entity_resolver_initialized(self):
+        """确保EntityResolver已初始化"""
+        if not self._entity_resolver_initialized:
+            await self._entity_resolver.initialize()
+            self._entity_resolver_initialized = True
     
     async def run_query(self, payload: AgentQuery) -> AgentResponse:
         """
@@ -84,6 +95,9 @@ class AgentServiceV2:
         """
         start_time = datetime.now()
         normalized_query = payload.query.strip()
+        
+        # 确保EntityResolver已初始化
+        await self._ensure_entity_resolver_initialized()
         
         logger.info(f"[V2] Processing query: {normalized_query}")
         
@@ -230,7 +244,7 @@ class AgentServiceV2:
             # 从查询或参数中提取 team_name
             team_name = parsed_step.raw_params.get("query") or context.get("query", "")
             # 使用实体提取逻辑
-            team_name = self._extract_team_name(team_name)
+            team_name = await self._extract_team_name(team_name)
             
             if not team_name:
                 return "系统提示: 无法识别球队名称。"
@@ -246,7 +260,7 @@ class AgentServiceV2:
                 parsed_step.raw_params.get("match_id") or  # 从 match_id 提取
                 context.get("query", "")
             )
-            team_name = self._extract_team_name(team_name)
+            team_name = await self._extract_team_name(team_name)
             
             if not team_name:
                 return "系统提示: 无法识别球队名称。"
@@ -267,7 +281,7 @@ class AgentServiceV2:
             # 从参数或查询中提取球队名称和联赛名称
             team_name = (
                 parsed_step.raw_params.get("team_name") or 
-                self._extract_team_name(context.get("query", ""))
+                await self._extract_team_name(context.get("query", ""))
             )
             league_name = parsed_step.raw_params.get("league_name")
             
@@ -292,7 +306,7 @@ class AgentServiceV2:
             
             # 如果参数中没有，尝试从查询中解析
             if not home_team or not away_team:
-                teams = self._extract_two_teams(query_text)
+                teams = await self._extract_two_teams(query_text)
                 if teams:
                     home_team, away_team = teams
             
@@ -438,56 +452,93 @@ class AgentServiceV2:
         
         return traces
     
-    def _extract_team_name(self, query: str) -> str:
+    async def _extract_team_name(self, query: str) -> str:
         """
-        从查询中提取球队名称（简单规则）
-        TODO: 后续使用 EntityResolver 替换
-        """
-        known_teams = [
-            "曼联", "Manchester United", "MUN",
-            "利物浦", "Liverpool", "LIV",
-            "阿森纳", "Arsenal", "ARS",
-            "曼城", "Manchester City", "MCI",
-            "切尔西", "Chelsea", "CHE",
-            "拜仁", "Bayern München", "FCB",
-            "多特", "Borussia Dortmund", "BVB",
-            "皇马", "Real Madrid", "RMA",
-            "巴萨", "Barcelona", "BAR",
-        ]
+        从查询中提取球队名称（使用EntityResolver）
         
-        query_lower = query.lower()
-        for team in known_teams:
-            if team.lower() in query_lower:
-                return team
+        策略：
+        1. 将查询按空格和标点分词
+        2. 尝试解析每个词为球队
+        3. 返回第一个匹配的球队名称
+        """
+        if not query:
+            return ""
+        
+        # 清理查询字符串（去除引号、空格等）
+        import re
+        query = query.strip().strip("'\"")
+        
+        # 简单分词：按空格、标点分割
+        words = re.split(r'[\s,，、。！？：；]+', query)
+        
+        # 尝试解析每个词，使用更宽松的阈值
+        for word in words:
+            word = word.strip().strip("'\"")  # 清理每个词的引号
+            if len(word) < 2:  # 跳过太短的词
+                continue
+            
+            try:
+                # 使用更低的阈值（0.6）来匹配更多球队
+                team_id = await self._entity_resolver.resolve_team(
+                    word, source="agent_v2", fuzzy_threshold=0.6
+                )
+                if team_id:
+                    # 返回标准化的球队名称
+                    team_info = await self._entity_resolver.get_team_info(team_id)
+                    if team_info:
+                        logger.info(f"成功识别球队: '{word}' -> {team_id} ({team_info['name']})")
+                        return team_info["name"]
+            except Exception as e:
+                logger.debug(f"Failed to resolve word '{word}': {e}")
+                continue
         
         return ""
     
-    def _extract_two_teams(self, query: str) -> tuple:
+    async def _extract_two_teams(self, query: str) -> tuple:
         """
-        从查询中提取两个球队名称
+        从查询中提取两个球队名称（使用EntityResolver）
         用于预测查询，如 "曼联对利物浦"
         
         Returns:
             (home_team, away_team) 或 None
         """
-        known_teams = [
-            ("曼联", "Manchester United"),
-            ("利物浦", "Liverpool"),
-            ("阿森纳", "Arsenal"),
-            ("曼城", "Manchester City"),
-            ("切尔西", "Chelsea"),
-            ("拜仁", "Bayern München"),
-            ("多特", "Borussia Dortmund"),
-            ("皇马", "Real Madrid"),
-            ("巴萨", "Barcelona"),
-        ]
+        if not query:
+            return None
         
+        # 清理查询字符串
+        import re
+        query = query.strip().strip("'\"")
+        
+        # 简单分词：按空格、标点分割
+        words = re.split(r'[\s,，、。！？：；]+', query)
+        
+        # 尝试解析球队
         found_teams = []
-        query_lower = query.lower()
+        found_team_ids = set()  # 去重
         
-        for cn_name, en_name in known_teams:
-            if cn_name in query or en_name.lower() in query_lower:
-                found_teams.append(en_name)  # 统一使用英文名
+        for word in words:
+            word = word.strip().strip("'\"")  # 清理每个词的引号
+            if len(word) < 2:  # 跳过太短的词
+                continue
+            
+            try:
+                # 使用更低的阈值（0.6）来匹配更多球队
+                team_id = await self._entity_resolver.resolve_team(
+                    word, source="agent_v2", fuzzy_threshold=0.6
+                )
+                if team_id and team_id not in found_team_ids:
+                    team_info = await self._entity_resolver.get_team_info(team_id)
+                    if team_info:
+                        found_teams.append(team_info["name"])
+                        found_team_ids.add(team_id)
+                        logger.info(f"成功识别球队: '{word}' -> {team_id} ({team_info['name']})")
+                        
+                        # 找到两个球队就停止
+                        if len(found_teams) >= 2:
+                            break
+            except Exception as e:
+                logger.debug(f"Failed to resolve word '{word}': {e}")
+                continue
         
         if len(found_teams) >= 2:
             return (found_teams[0], found_teams[1])
