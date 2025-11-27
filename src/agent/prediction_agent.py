@@ -16,8 +16,8 @@ from __future__ import annotations
 import logging
 from typing import Dict, Any, Optional, TYPE_CHECKING
 
-from langchain.agents import AgentExecutor, create_react_agent
-from langchain_core.prompts import PromptTemplate
+from langchain.agents import AgentExecutor, create_structured_chat_agent
+from langchain_core.prompts import ChatPromptTemplate
 from langchain.tools import StructuredTool
 from pydantic import BaseModel, Field
 
@@ -144,61 +144,76 @@ class PredictionAgent:
         
         return tools
     
-    def _create_prompt(self) -> PromptTemplate:
-        """创建 Agent Prompt（ReAct 格式）"""
-        template = """你是预测专家，擅长分析足球比赛的胜负走势。
+    def _create_prompt(self) -> ChatPromptTemplate:
+        """创建 Agent Prompt（Structured Chat 格式）"""
+        
+        system_message = """你是预测专家，擅长分析足球比赛的胜负走势。
 
-可用工具：
+## 可用工具
 
 {tools}
 
-工具说明：
-- predict_match: 预测比赛的胜平负结果和概率
-  参数: home_team（主队名称）, away_team（客队名称）
+## 工作要求
 
-工作要求：
 1. 从用户问题中提取主队和客队名称
 2. 调用预测工具获取结果
 3. 用专业但易懂的语言解释预测
 4. 强调这是基于数据的概率预测，不是绝对结果
 5. 指出关键影响因素和不确定性
 
-回答风格：
+## 回答风格
+
 - 客观理性，不夸大
 - 数据驱动，有理有据
 - 突出概率和关键因素
 - 提示预测的局限性
 
-注意事项：
+## 注意事项
+
 - 如果用户问题中没有明确的主客队，询问澄清
 - 如果数据质量低，明确告知用户
 - 避免绝对化的表述（如"一定会赢"）
 
-使用以下格式回答：
+## 响应格式
 
-Question: 用户的问题
-Thought: 我需要做什么
-Action: 工具名称
-Action Input: {{"参数名": "参数值"}}
-Observation: 工具返回结果
-... (重复直到有答案)
-Thought: 我现在知道最终答案了
-Final Answer: 最终答案
+请使用以下 JSON 格式调用工具：
 
-可用工具名称：{tool_names}
+```json
+{{{{
+    "action": "predict_match",
+    "action_input": {{{{
+        "home_team": "主队名称",
+        "away_team": "客队名称"
+    }}}}
+}}}}
+```
 
-开始！
+当你有了最终答案时，使用：
 
-Question: {input}
-Thought: {agent_scratchpad}"""
-        
-        prompt = PromptTemplate.from_template(template)
+```json
+{{{{
+    "action": "Final Answer",
+    "action_input": "你的最终答案"
+}}}}
+```
+
+可用工具名称: {tool_names}
+"""
+
+        human_template = """{input}
+
+{agent_scratchpad}"""
+
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", system_message),
+            ("human", human_template),
+        ])
         
         return prompt
     
     def _create_agent_executor(self) -> AgentExecutor:
-        """创建 Agent Executor（使用 ReAct 模式，兼容本地LLM）"""
-        agent = create_react_agent(
+        """创建 Agent Executor（使用 Structured Chat 模式，正确解析 JSON 参数）"""
+        agent = create_structured_chat_agent(
             llm=self._llm,
             tools=self._tools,
             prompt=self._prompt

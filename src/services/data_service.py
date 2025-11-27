@@ -190,7 +190,7 @@ class DataService:
             query = select(Match).options(
                 selectinload(Match.home_team),
                 selectinload(Match.away_team),
-                selectinload(Match.competition)
+                selectinload(Match.league)
             )
             
             filters = []

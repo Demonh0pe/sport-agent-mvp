@@ -16,8 +16,8 @@ from __future__ import annotations
 import logging
 from typing import Dict, Any, Optional, TYPE_CHECKING
 
-from langchain.agents import AgentExecutor, create_react_agent
-from langchain_core.prompts import PromptTemplate
+from langchain.agents import AgentExecutor, create_structured_chat_agent
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.tools import StructuredTool
 from pydantic import BaseModel, Field
 
@@ -363,67 +363,64 @@ class DataStatsAgent:
         
         return tools
     
-    def _create_prompt(self) -> PromptTemplate:
-        """创建 Agent Prompt（ReAct 格式）"""
-        template = """你是数据统计专家,负责查询和分析足球比赛数据。
+    def _create_prompt(self) -> ChatPromptTemplate:
+        """创建 Agent Prompt（Structured Chat 格式）"""
+        
+        system_message = """你是数据统计专家，负责查询和分析足球比赛数据。
 
-可用工具：
+## 可用工具
 
 {tools}
 
-工具使用指南：
-1. get_recent_matches: 查询球队近期比赛
-   - 参数：team_name（球队名称），match_count（比赛数量）
-   
-2. get_team_form: 查询球队近期状态统计
-   - 参数：team_name（球队名称），last_n（最近N场）
-   
-3. get_standings: 查询积分榜，有三种用法：
-   - 只提供 competition：返回前10名
-   - 提供 competition + team_name：返回该队精确排名（推荐用于"某队排第几"）
-   - 提供 competition + full_list=True：返回完整榜单（当查询"最后一名"、"降级区"时必须使用）
-   
-4. get_head_to_head: 查询历史交锋
-   - 参数：team_a、team_b（球队名称），last_n（最近N场）
-   
-5. get_home_away_stats: 查询主客场数据
-   - 参数：team_name（球队名称），venue（home/away），last_n（最近N场）
+## 重要规则
 
-重要规则：
 - ✅ 工具返回什么就说什么，绝不编造数据
-- ✅ 对于"某队排第几"的问题，使用 get_standings 的 team_name 参数
-- ✅ 对于"最后一名"、"倒数第一"、"降级区"等问题，必须使用 full_list=True
 - ✅ 支持中英文队名，如 "曼联" 或 "Manchester United"
 - ✅ 联赛名称可用中文（"英超"）或英文（"Premier League"）
 - ❌ 绝不使用占位符（XX、YY）
 - ❌ 绝不假设或猜测数据
-- ❌ 绝不从"前10名"数据中推测"最后一名"
+- ❌ 如果工具返回空数据，直接说"未找到数据"
 
-使用以下格式回答：
+## 响应格式
 
-Question: 用户的问题
-Thought: 我需要做什么
-Action: 工具名称
-Action Input: {{"参数名": "参数值"}}
-Observation: 工具返回结果
-... (重复直到有答案)
-Thought: 我现在知道最终答案了
-Final Answer: 最终答案
+请使用以下 JSON 格式调用工具：
 
-可用工具名称：{tool_names}
+```json
+{{{{
+    "action": "工具名称",
+    "action_input": {{{{
+        "参数名1": "值1",
+        "参数名2": "值2"
+    }}}}
+}}}}
+```
 
-开始！
+当你有了最终答案时，使用：
 
-Question: {input}
-Thought: {agent_scratchpad}"""
-        
-        prompt = PromptTemplate.from_template(template)
+```json
+{{{{
+    "action": "Final Answer",
+    "action_input": "你的最终答案"
+}}}}
+```
+
+可用工具名称: {tool_names}
+"""
+
+        human_template = """{input}
+
+{agent_scratchpad}"""
+
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", system_message),
+            ("human", human_template),
+        ])
         
         return prompt
     
     def _create_agent_executor(self) -> AgentExecutor:
-        """创建 Agent Executor（使用 ReAct 模式,兼容本地LLM）"""
-        agent = create_react_agent(
+        """创建 Agent Executor（使用 Structured Chat 模式，正确解析 JSON 参数）"""
+        agent = create_structured_chat_agent(
             llm=self._llm,
             tools=self._tools,
             prompt=self._prompt

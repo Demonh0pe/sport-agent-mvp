@@ -15,9 +15,8 @@ import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
-from langchain.agents import AgentExecutor, create_react_agent
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate
-from langchain_core.messages import SystemMessage, HumanMessage
+from langchain.agents import AgentExecutor, create_structured_chat_agent
+from langchain_core.prompts import ChatPromptTemplate
 from langchain.memory import ConversationBufferMemory  # TODO: Deprecated - 迁移到新的 Memory API
 
 from src.shared.llm_client_v2 import get_llm_client
@@ -70,9 +69,9 @@ class SupervisorAgent:
         
         logger.info(f"SupervisorAgent initialized with {len(expert_tools)} expert tools")
     
-    def _create_supervisor_prompt(self) -> PromptTemplate:
+    def _create_supervisor_prompt(self) -> ChatPromptTemplate:
         """
-        创建 Supervisor 的 System Prompt
+        创建 Supervisor 的 System Prompt（Structured Chat 格式）
         
         指导 LLM：
         - 如何理解用户意图
@@ -81,113 +80,80 @@ class SupervisorAgent:
         """
         system_message = """你是 Sport Agent 的监督智能体，负责调度多个专家智能体来回答用户的足球相关问题。
 
-你可以使用以下专家工具：
+## 可用专家工具
 
-1. **data_stats_expert**: 用于查询联赛、比赛、球队状态、近期表现、主客场差异等数据和统计信息。
-   - 适用场景：查询比赛时间、球队战绩、积分榜、近期状态、主客场表现
-   
-2. **prediction_expert**: 用于对一场具体比赛输出胜平负概率及相关特征说明。
-   - 适用场景：预测比赛结果、分析双方实力对比、给出胜负判断
-   
-3. **knowledge_expert**: 用于解释足球规则、战术、专业名词和比赛分析逻辑。
-   - 适用场景：规则解释、战术分析、足球知识科普
-
-**工作流程要求**：
-
-1. **理解意图**：仔细分析用户问题，判断需要哪些类型的信息。
-
-2. **规划调用**：
-   - 如果需要数据支持，先调用 data_stats_expert
-   - 如果需要预测，调用 prediction_expert（通常需要先获取数据）
-   - 如果需要解释概念，调用 knowledge_expert
-   - 可以组合调用多个专家
-
-3. **结果验证**：
-   - 检查专家返回的结果是否完整
-   - 如果缺少关键信息，考虑追加调用
-   - 如果专家无法回答，诚实告知用户
-
-4. **答案合成**：
-   - 用自然、流畅的语言整合专家结果
-   - 突出关键信息和数据依据
-   - 保持客观，不要夸大或编造信息
-   - 如果是预测类问题，说明概率和依据
-
-5. **边界意识**：
-   - 不要自己臆造数据，所有事实必须来自工具返回
-   - 如果工具返回错误或无结果，承认限制
-   - 超出系统能力的问题，礼貌拒绝
-
-**核心原则（绝对禁止违反）**：
-
-1. **严格禁止编造数据**：
-   - 不允许虚构任何比赛结果、日期、比分
-   - 不允许基于"常识"或"假设"给出数据
-   - 所有数据必须来自工具返回的真实结果
-
-2. **必须调用工具获取数据**：
-   - 对任何需要数据的问题，必须先调用相应工具
-   - 不要试图从用户问题中"猜测"答案
-   - 工具返回什么就说什么，不要添油加醋
-
-3. **诚实面对数据缺失**：
-   - 如果工具返回空结果，直接告知："数据库中没有该数据"
-   - 如果调用失败，明确说明："查询失败"
-   - 不要用模糊语言掩盖问题
-
-4. **简洁直接的回答**：
-   - 直接给出工具返回的数据
-   - 不要过度解释或编造背景
-   - 保持客观，不要主观臆断
-
-**错误示例（禁止）**：
-用户："比萨最近战绩"
-错误回答："比萨队在最近的意甲比赛中表现不佳，他们输给了尤文图斯0-2..."
-（这是编造的！）
-
-**正确示例**：
-用户："比萨最近战绩"
-→ 调用 data_stats_expert("比萨")
-→ 工具返回：无数据
-→ 正确回答："抱歉，数据库中没有比萨队的比赛数据。"
-
-记住：真实性 > 一切
-
-使用以下格式回答：
-
-Question: 用户的问题
-Thought: 我需要做什么
-Action: 工具名称
-Action Input: 工具输入
-Observation: 工具返回结果
-... (重复直到有答案)
-Thought: 我现在知道最终答案了
-Final Answer: 基于真实数据的最终答案
-
-可用工具：
 {tools}
 
-工具名称：
-{tool_names}
+## 工作流程
 
-开始！
+1. **理解意图**：分析用户问题，结合对话历史判断需要哪类信息
+2. **调用专家**：选择合适的专家工具获取信息
+3. **验证结果**：检查返回结果是否完整
+4. **合成答案**：整合专家结果，生成自然语言回答
 
-Question: {input}
-Thought: {agent_scratchpad}"""
-        
-        prompt = PromptTemplate.from_template(system_message)
+## 上下文理解（重要！）
+
+当用户问题包含指代词（如"那XX呢"、"他们"、"这个队"）时：
+- 回顾之前的对话，理解用户在问什么
+- 例如：用户先问"曼联最近状态"，再问"那利物浦呢"，应理解为问"利物浦最近状态"
+- 自动补全用户的问题意图，调用相应的工具
+
+## 核心原则
+
+- ✅ 所有数据必须来自工具返回
+- ✅ 工具返回什么就说什么
+- ✅ 数据缺失时诚实告知
+- ✅ 理解上下文，自动补全追问意图
+- ❌ 绝不编造数据
+- ❌ 绝不猜测答案
+- ❌ 遇到追问时不要反问用户，直接根据上下文理解并调用工具
+
+## 响应格式
+
+调用工具时使用：
+
+```json
+{{{{
+    "action": "工具名称",
+    "action_input": "查询内容字符串"
+}}}}
+```
+
+给出最终答案时使用：
+
+```json
+{{{{
+    "action": "Final Answer",
+    "action_input": "你的最终答案"
+}}}}
+```
+
+可用工具名称: {tool_names}
+"""
+
+        human_template = """对话历史：
+{chat_history}
+
+当前问题：{input}
+
+{agent_scratchpad}"""
+
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", system_message),
+            ("human", human_template),
+        ])
         
         return prompt
     
     def _create_agent_executor(self) -> AgentExecutor:
         """
-        创建 LangChain AgentExecutor
+        创建 LangChain AgentExecutor（使用 Structured Chat 模式，正确解析 JSON 参数）
         
         Returns:
             配置好的 AgentExecutor
         """
-        # 创建 ReAct Agent
-        agent = create_react_agent(
+        # 创建 Structured Chat Agent（正确处理 JSON 格式参数）
+        agent = create_structured_chat_agent(
             llm=self._llm,
             tools=self._expert_tools,
             prompt=self._prompt

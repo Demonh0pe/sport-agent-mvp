@@ -162,6 +162,76 @@ class EntityResolver:
         if temp_name != working_name:
             aliases.append(temp_name)
         
+        # 7. 常用中文简称映射（球迷常用叫法）
+        chinese_nicknames = {
+            # 西甲
+            "barcelona": ["巴萨", "巴塞"],
+            "real madrid": ["皇马"],
+            "atletico": ["马竞", "床单军团"],
+            "sevilla": ["塞维利亚"],
+            "villarreal": ["黄潜", "黄色潜水艇"],
+            "betis": ["贝蒂斯"],
+            "sociedad": ["皇家社会", "皇社"],
+            "athletic": ["毕巴", "毕尔巴鄂"],
+            "valencia": ["瓦伦西亚", "蝙蝠军团"],
+            "celta": ["塞尔塔"],
+            # 英超
+            "manchester united": ["曼联", "红魔"],
+            "manchester city": ["曼城", "蓝月亮"],
+            "liverpool": ["利物浦", "红军"],
+            "arsenal": ["阿森纳", "枪手", "兵工厂"],
+            "chelsea": ["切尔西", "蓝军"],
+            "tottenham": ["热刺", "白百合"],
+            "aston villa": ["维拉", "阿斯顿维拉"],
+            "newcastle": ["纽卡", "纽卡斯尔", "喜鹊"],
+            "west ham": ["西汉姆", "铁锤帮"],
+            "brighton": ["布莱顿", "海鸥"],
+            "everton": ["埃弗顿", "太妃糖"],
+            "crystal palace": ["水晶宫"],
+            "wolves": ["狼队"],
+            "bournemouth": ["伯恩茅斯", "樱桃"],
+            "fulham": ["富勒姆"],
+            "brentford": ["布伦特福德"],
+            "nottingham": ["诺丁汉森林", "森林"],
+            "burnley": ["伯恩利"],
+            "luton": ["卢顿"],
+            "sheffield": ["谢菲联"],
+            # 德甲
+            "bayern": ["拜仁", "南大王"],
+            "dortmund": ["多特", "大黄蜂"],
+            "leverkusen": ["勒沃库森", "药厂"],
+            "leipzig": ["莱比锡"],
+            "frankfurt": ["法兰克福"],
+            "gladbach": ["门兴"],
+            "wolfsburg": ["沃尔夫斯堡", "狼堡"],
+            "freiburg": ["弗赖堡"],
+            "hoffenheim": ["霍芬海姆"],
+            "stuttgart": ["斯图加特"],
+            # 意甲
+            "juventus": ["尤文", "斑马军团", "老妇人"],
+            "inter": ["国际米兰", "国米", "蓝黑军团"],
+            "milan": ["AC米兰", "红黑军团"],
+            "napoli": ["那不勒斯"],
+            "roma": ["罗马", "红狼"],
+            "lazio": ["拉齐奥", "蓝鹰"],
+            "atalanta": ["亚特兰大"],
+            "fiorentina": ["佛罗伦萨", "紫百合"],
+            # 法甲
+            "paris": ["巴黎", "大巴黎"],
+            "marseille": ["马赛"],
+            "lyon": ["里昂"],
+            "monaco": ["摩纳哥"],
+            "lille": ["里尔"],
+            "nice": ["尼斯"],
+            "lens": ["朗斯"],
+            "rennes": ["雷恩"],
+        }
+        
+        name_lower = working_name.lower()
+        for key, nicknames in chinese_nicknames.items():
+            if key in name_lower:
+                aliases.extend(nicknames)
+        
         # 去重并过滤空字符串
         return list(set(alias for alias in aliases if alias.strip()))
     
