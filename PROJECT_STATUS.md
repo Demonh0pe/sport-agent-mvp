@@ -6,26 +6,26 @@
 
 ---
 
-## 📊 项目概览
+##  项目概览
 
 Sport Agent MVP 是一个**企业级 AI 足球分析助手**，采用 Domain-Driven Design (DDD) 架构，支持智能预测、深度分析和自然语言交互。
 
 **核心能力**：
-- 🎯 **智能预测**：XGBoost + LLM 驱动的比赛结果预测
-- 📊 **深度分析**：历史交锋、球队状态、积分榜分析
+-  **智能预测**：XGBoost + LLM 驱动的比赛结果预测
+-  **深度分析**：历史交锋、球队状态、积分榜分析
 - 💬 **自然交互**：意图识别、实体解析、中英文双语支持
 - 🔄 **实时数据**：自动同步 6 大联赛（英超、德甲、西甲、意甲、法甲、欧冠）数据
 
 ---
 
-## ✅ 已完成功能 (95%)
+##  已完成功能 (95%)
 
 ### 1. 数据层 (100%)
-- ✅ 数据摄取管道（football-data.org API）
-- ✅ 实体解析器（EntityResolver，443+ 别名映射）
-- ✅ 数据质量监控
-- ✅ 增量更新机制（UPSERT）
-- ✅ 数据库迁移（Alembic）
+-  数据摄取管道（football-data.org API）
+-  实体解析器（EntityResolver，443+ 别名映射）
+-  数据质量监控
+-  增量更新机制（UPSERT）
+-  数据库迁移（Alembic）
 
 **关键指标**：
 - 808 场比赛数据（最近90天）
@@ -34,11 +34,11 @@ Sport Agent MVP 是一个**企业级 AI 足球分析助手**，采用 Domain-Dri
 - 89% 警告减少率（通过别名优化）
 
 ### 2. Agent 层 (90%)
-- ✅ 意图识别（9 种意图类型）
-- ✅ 参数解析（球队、联赛、日期）
-- ✅ 工具调用（比赛查询、积分榜、统计分析）
-- ✅ 场景处理（澄清、对比）
-- ✅ 结果合成（结构化输出）
+-  意图识别（9 种意图类型）
+-  参数解析（球队、联赛、日期）
+-  工具调用（比赛查询、积分榜、统计分析）
+-  场景处理（澄清、对比）
+-  结果合成（结构化输出）
 
 **支持的查询类型**：
 - 比赛查询（最近、未来、特定球队）
@@ -48,27 +48,27 @@ Sport Agent MVP 是一个**企业级 AI 足球分析助手**，采用 Domain-Dri
 - 澄清式对话
 
 ### 3. 模型层 (85%)
-- ✅ 特征工程（近期状态、排名、主客场）
-- ✅ XGBoost 基线模型
+-  特征工程（近期状态、排名、主客场）
+-  XGBoost 基线模型
 - 🔄 深度模型（待优化）
-- ✅ 特征存储
+-  特征存储
 
 ### 4. 多 LLM 支持 (100%)
-- ✅ Ollama 本地模型（qwen2.5:3b）
-- ✅ DeepSeek API（deepseek-chat）
-- ✅ OpenAI API（gpt-4）
-- ✅ 动态切换（配置文件）
+-  Ollama 本地模型（qwen2.5:3b）
+-  DeepSeek API（deepseek-chat）
+-  OpenAI API（gpt-4）
+-  动态切换（配置文件）
 
 ### 5. 基础设施 (100%)
-- ✅ PostgreSQL 数据库
-- ✅ Redis 缓存
-- ✅ Docker Compose 编排
-- ✅ 异步 I/O（asyncio + asyncpg）
-- ✅ 结构化日志（Loguru）
+-  PostgreSQL 数据库
+-  Redis 缓存
+-  Docker Compose 编排
+-  异步 I/O（asyncio + asyncpg）
+-  结构化日志（Loguru）
 
 ---
 
-## 🚀 核心技术栈
+##  核心技术栈
 
 ### 后端
 - **语言**: Python 3.10+
@@ -92,7 +92,7 @@ Sport Agent MVP 是一个**企业级 AI 足球分析助手**，采用 Domain-Dri
 
 ---
 
-## 📁 项目结构
+##  项目结构
 
 ```
 sport agent mvp/
@@ -116,13 +116,13 @@ sport agent mvp/
 │       ├── llm_client_v2.py       # LLM 客户端
 │       └── translation_helper.py   # 翻译助手
 ├── scripts/                # 工具脚本
-│   ├── chat_simple.py                # 简洁聊天界面 ⭐
+│   ├── chat_simple.py                # 简洁聊天界面 
 │   ├── chat_with_agent.py            # 完整聊天界面
 │   ├── check_database_status.py      # 数据库检查
-│   ├── sync_with_api_names.py        # 同步API名称 ⭐
+│   ├── sync_with_api_names.py        # 同步API名称 
 │   └── manage_team_aliases.py        # 管理球队别名
 ├── docs/                   # 技术文档
-│   ├── DATA_INGESTION_FAQ.md         # 数据摄取FAQ ⭐
+│   ├── DATA_INGESTION_FAQ.md         # 数据摄取FAQ 
 │   ├── DATABASE_QUERY_GUIDE.md       # 数据库查询指南
 │   ├── AGENT_ARCHITECTURE.md         # Agent架构
 │   └── LOCAL_LLM_INTEGRATION.md      # 本地LLM集成
@@ -130,21 +130,21 @@ sport agent mvp/
 ├── config/                 # 配置文件
 ├── docker-compose.yaml     # Docker 编排
 ├── requirements.txt        # Python 依赖
-├── README.md               # 项目入口 ⭐
-└── START_HERE.md           # 快速开始 ⭐
+├── README.md               # 项目入口 
+└── START_HERE.md           # 快速开始 
 ```
 
 ---
 
-## 🎯 近期完成的工作
+##  近期完成的工作
 
-### 2025-11-26：数据摄取优化 ✅
+### 2025-11-26：数据摄取优化 
 **问题**：EntityResolver 无法解析部分球队名称（26+ 警告）
 
 **解决方案**：
-1. ✅ 增强别名生成逻辑（支持多语言后缀/前缀）
-2. ✅ 批量修复 72 个球队别名
-3. ✅ 同步 API 官方名称（`sync_with_api_names.py`）
+1.  增强别名生成逻辑（支持多语言后缀/前缀）
+2.  批量修复 72 个球队别名
+3.  同步 API 官方名称（`sync_with_api_names.py`）
 
 **成果**：
 - 警告从 26+ 降至 3 个（**89% 减少**）
@@ -183,7 +183,7 @@ sport agent mvp/
 
 ---
 
-## 🚀 快速开始
+##  快速开始
 
 ### 1. 环境准备
 
@@ -220,7 +220,7 @@ python scripts/quick_verify_data.py
 ### 3. 开始对话
 
 ```bash
-# 简洁模式（推荐）⭐
+# 简洁模式（推荐）
 python scripts/chat_simple.py
 
 # 完整模式
@@ -238,7 +238,7 @@ python scripts/chat_with_agent.py
 
 ---
 
-## 📊 系统指标
+##  系统指标
 
 ### 数据覆盖
 - **联赛**: 6 个（PL, BL1, PD, SA, FL1, CL）
@@ -296,13 +296,13 @@ ollama list
 
 ### 技术文档
 1. [docs/AGENT_ARCHITECTURE.md](docs/AGENT_ARCHITECTURE.md) - Agent 架构设计
-2. [docs/DATA_INGESTION_FAQ.md](docs/DATA_INGESTION_FAQ.md) - 数据摄取常见问题 ⭐
+2. [docs/DATA_INGESTION_FAQ.md](docs/DATA_INGESTION_FAQ.md) - 数据摄取常见问题 
 3. [docs/DATABASE_QUERY_GUIDE.md](docs/DATABASE_QUERY_GUIDE.md) - 数据库查询指南
 4. [docs/LOCAL_LLM_INTEGRATION.md](docs/LOCAL_LLM_INTEGRATION.md) - 本地 LLM 集成
 5. [docs/ZERO_HARDCODE_IMPLEMENTATION.md](docs/ZERO_HARDCODE_IMPLEMENTATION.md) - 零硬编码实现
 
 ### 问题解决
-1. [docs/TEAM_ALIAS_FIX_GUIDE.md](docs/TEAM_ALIAS_FIX_GUIDE.md) - 球队别名修复 ⭐
+1. [docs/TEAM_ALIAS_FIX_GUIDE.md](docs/TEAM_ALIAS_FIX_GUIDE.md) - 球队别名修复 
 2. [docs/DATA_INTENT_GUIDE.md](docs/DATA_INTENT_GUIDE.md) - 数据意图体系
 
 ---
@@ -313,10 +313,10 @@ ollama list
 所有实体（球队、联赛）从数据库动态加载，无需硬编码映射：
 
 ```python
-# ❌ 不好的做法（硬编码）
+#  不好的做法（硬编码）
 TEAM_MAP = {"Manchester United": "MUN", "Liverpool": "LIV", ...}
 
-# ✅ 好的做法（动态加载）
+#  好的做法（动态加载）
 team_id = await entity_resolver.resolve_team("Manchester United")
 ```
 
@@ -372,6 +372,6 @@ llm:
 
 ---
 
-**项目状态**: ✅ MVP 完成，生产就绪  
+**项目状态**:  MVP 完成，生产就绪  
 **推荐操作**: 阅读 [START_HERE.md](START_HERE.md) 开始使用
 

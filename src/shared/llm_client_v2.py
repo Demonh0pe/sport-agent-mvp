@@ -43,8 +43,8 @@ class LLMClient:
     
     def __init__(
         self,
-        provider: str = "ollama",
-        model: str = "qwen:7b",
+        provider: Optional[str] = None,
+        model: Optional[str] = None,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
         temperature: float = 0.7,
@@ -58,16 +58,18 @@ class LLMClient:
             model: 模型名称
             api_key: API密钥（本地模型不需要）
             base_url: 基础URL
-            temperature: 温度参数
-            max_tokens: 最大token数
+            temperature: 温度参数（越低越快）
+            max_tokens: 最大token数（越少越快）
         """
-        self.provider = provider.lower()
-        self.model = model
-        self.temperature = temperature
-        self.max_tokens = max_tokens
+        # 从环境变量获取配置（优先级高于参数）
+        import os
+        self.provider = (provider or os.getenv("LLM_PROVIDER", "ollama")).lower()
+        self.model = model or os.getenv("LLM_MODEL", "qwen2.5:7b")  # 默认使用 qwen2.5
+        self.temperature = float(os.getenv("LLM_TEMPERATURE", str(temperature)))
+        self.max_tokens = int(os.getenv("LLM_MAX_TOKENS", str(max_tokens)))
         
         # 配置客户端
-        self.client = self._init_client(provider, api_key, base_url)
+        self.client = self._init_client(self.provider, api_key, base_url)
         
         logger.info(f"LLM客户端初始化: {provider} ({model})")
     
@@ -207,6 +209,70 @@ class LLMClient:
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
+    
+    def as_langchain_chat_model(self):
+        """
+        转换为 LangChain ChatModel
+        
+        用于与 LangChain Agents 集成
+        
+        Returns:
+            LangChain ChatOpenAI 实例
+        """
+        try:
+            from langchain_openai import ChatOpenAI
+            
+            # 根据提供商配置不同的参数
+            if self.provider in ["ollama", "lmstudio", "vllm"]:
+                default_urls = {
+                    "ollama": "http://localhost:11434/v1",
+                    "lmstudio": "http://localhost:1234/v1",
+                    "vllm": "http://localhost:8000/v1",
+                }
+                base_url = default_urls.get(self.provider)
+                
+                return ChatOpenAI(
+                    model=self.model,
+                    base_url=base_url,
+                    api_key="local-llm",
+                    temperature=self.temperature,
+                    max_tokens=self.max_tokens,
+                    timeout=120.0,
+                )
+            
+            elif self.provider == "deepseek":
+                return ChatOpenAI(
+                    model=self.model,
+                    base_url="https://api.deepseek.com",
+                    api_key="dummy-key",  # 需要真实key
+                    temperature=self.temperature,
+                    max_tokens=self.max_tokens,
+                    timeout=30.0,
+                )
+            
+            elif self.provider == "openai":
+                return ChatOpenAI(
+                    model=self.model,
+                    api_key="dummy-key",  # 需要真实key
+                    temperature=self.temperature,
+                    max_tokens=self.max_tokens,
+                    timeout=30.0,
+                )
+            
+            else:
+                # 默认配置
+                return ChatOpenAI(
+                    model=self.model,
+                    temperature=self.temperature,
+                    max_tokens=self.max_tokens,
+                )
+                
+        except ImportError:
+            logger.error("langchain_openai 未安装，请运行: pip install langchain-openai")
+            raise
+        except Exception as e:
+            logger.error(f"转换为 LangChain ChatModel 失败: {e}")
+            raise
 
 
 # 从环境变量创建默认客户端
@@ -223,7 +289,7 @@ def create_default_client() -> LLMClient:
     import os
     
     provider = os.getenv("LLM_PROVIDER", "ollama")
-    model = os.getenv("LLM_MODEL", "qwen:7b")
+    model = os.getenv("LLM_MODEL", "qwen2.5:7b")  # 使用更新的默认模型
     api_key = os.getenv("LLM_API_KEY")
     base_url = os.getenv("LLM_BASE_URL")
     
@@ -235,14 +301,23 @@ def create_default_client() -> LLMClient:
     )
 
 
-# 全局单例（向后兼容）
-try:
-    llm_client = create_default_client()
-    logger.info(f"LLM客户端已初始化: {llm_client.get_info()}")
-except Exception as e:
-    logger.warning(f"LLM客户端初始化失败: {e}")
-    # 创建一个虚拟客户端
-    llm_client = LLMClient(provider="ollama", model="dummy")
+# 全局单例（向后兼容）- 延迟初始化避免导入时错误
+_llm_client_instance = None
+
+def get_llm_client():
+    """获取全局 LLM 客户端实例（延迟初始化）"""
+    global _llm_client_instance
+    if _llm_client_instance is None:
+        try:
+            _llm_client_instance = create_default_client()
+            logger.info(f"LLM客户端已初始化: {_llm_client_instance.get_info()}")
+        except Exception as e:
+            logger.error(f"LLM客户端初始化失败: {e}")
+            raise
+    return _llm_client_instance
+
+# 向后兼容的全局变量（首次访问时初始化）
+llm_client = None
 
 
 # 测试代码
@@ -283,11 +358,11 @@ if __name__ == "__main__":
                 prompt = "请用一句话介绍曼联足球俱乐部"
                 response = await client.generate(prompt)
                 
-                print(f"✅ 成功")
+                print(f"成功")
                 print(f"响应: {response[:100]}...")
                 
             except Exception as e:
-                print(f"❌ 失败: {e}")
+                print(f"失败: {e}")
         
         print("\n" + "=" * 80)
     

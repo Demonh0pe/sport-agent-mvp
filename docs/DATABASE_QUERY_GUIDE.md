@@ -1,6 +1,6 @@
 # 数据库查询指南
 
-## 📚 目录
+##  目录
 1. [快速开始](#快速开始)
 2. [常用命令](#常用命令)
 3. [使用psql命令行](#使用psql命令行)
@@ -9,7 +9,7 @@
 
 ---
 
-## 🚀 快速开始
+##  快速开始
 
 ### 方法1: 使用我们的脚本（推荐）
 
@@ -35,7 +35,7 @@ python scripts/check_database_status.py --table standings
 
 ---
 
-## 💡 常用命令
+##  常用命令
 
 ### 1. 查看数据摘要
 ```bash
@@ -147,7 +147,7 @@ asyncio.run(my_query())
 
 ---
 
-## 📝 常见SQL查询
+##  常见SQL查询
 
 ### 1. 查看联赛信息
 ```sql
@@ -348,7 +348,7 @@ ORDER BY match_datetime DESC;
 
 ---
 
-## 🔧 数据质量检查
+##  数据质量检查
 
 ### 检查缺失数据
 ```sql
@@ -380,7 +380,7 @@ LEFT JOIN (
 
 ---
 
-## 📊 可视化查询（适合导出到Excel）
+##  可视化查询（适合导出到Excel）
 
 ### 导出联赛摘要
 ```sql
@@ -463,7 +463,7 @@ ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
 
 ---
 
-## 📚 相关资源
+##  相关资源
 
 - [PostgreSQL官方文档](https://www.postgresql.org/docs/)
 - [SQLAlchemy文档](https://docs.sqlalchemy.org/)
@@ -472,7 +472,7 @@ ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
 
 ---
 
-## ✅ 快速检查清单
+##  快速检查清单
 
 在数据导入后，使用以下命令验证：
 

@@ -24,3 +24,14 @@ AsyncSessionLocal = sessionmaker(
 async def get_db():
     async with AsyncSessionLocal() as session:
         yield session
+
+# 上下文管理器 (供 Service 层使用)
+def get_async_session():
+    """
+    获取异步数据库会话（上下文管理器）
+    
+    使用方式:
+        async with get_async_session() as session:
+            result = await session.execute(query)
+    """
+    return AsyncSessionLocal()

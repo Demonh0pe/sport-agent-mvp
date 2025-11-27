@@ -19,7 +19,7 @@ WARNING - 无法解析球队名称: 'AFC Ajax' (来源: football-data.org), 最�
 
 ## 解决方案
 
-### 方法 1：运行自动修复脚本（推荐）⭐
+### 方法 1：运行自动修复脚本（推荐）
 
 ```bash
 # 激活虚拟环境
@@ -57,7 +57,7 @@ UPDATE teams SET team_name = 'Stade Brestois 29 (布雷斯特)' WHERE team_id = 
 UPDATE teams SET team_name = 'AFC Ajax (阿贾克斯)' WHERE team_id = 'AJA';
 ```
 
-### 方法 3：调整匹配阈值（不推荐）⚠️
+### 方法 3：调整匹配阈值（不推荐）
 
 修改 `src/data_pipeline/entity_resolver.py`:
 
@@ -168,7 +168,7 @@ score = SequenceMatcher(None, "FC Barcelona", "barcelona").ratio()
 
 ## 总结
 
-✅ **推荐流程：**
+ **推荐流程：**
 1. 运行 `python scripts/fix_missing_aliases.py`
 2. 验证修复成功
 3. 重新运行数据摄取

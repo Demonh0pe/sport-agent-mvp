@@ -2,7 +2,7 @@
 
 ## Q1: 多次运行数据摄取会造成数据冗余吗？
 
-**答案：不会！** ✅
+**答案：不会！** 
 
 系统使用 **UPSERT 机制**（PostgreSQL 的 `ON CONFLICT DO UPDATE`）：
 
@@ -47,7 +47,7 @@ WARNING - 无法解析球队名称: 'FC Bayern München' (来源: football-data.
 
 ### 解决方案
 
-**方法 1：运行批量修复脚本（推荐）⭐**
+**方法 1：运行批量修复脚本（推荐）**
 
 ```bash
 source .venv/bin/activate
@@ -55,10 +55,10 @@ python scripts/batch_fix_all_aliases.py
 ```
 
 这会：
-1. ✅ 更新所有主流联赛球队的标准名称
-2. ✅ 添加 API 使用的完整名称（如 "Brentford FC"）
-3. ✅ 保留中文别名（用户友好）
-4. ✅ 处理冲突的 team_id（如 BRE 在英超和法甲）
+1.  更新所有主流联赛球队的标准名称
+2.  添加 API 使用的完整名称（如 "Brentford FC"）
+3.  保留中文别名（用户友好）
+4.  处理冲突的 team_id（如 BRE 在英超和法甲）
 
 **方法 2：使用别名管理工具**
 
@@ -79,7 +79,7 @@ python scripts/manage_team_aliases.py
 fuzzy_threshold: float = 0.60  # 从 0.85 降至 0.60
 ```
 
-⚠️ **风险**：可能导致错误匹配。
+ **风险**：可能导致错误匹配。
 
 ---
 
@@ -113,7 +113,7 @@ if not home_id:
 
 ### 最佳实践
 
-✅ 定期运行 `batch_fix_all_aliases.py` 维护球队别名映射
+ 定期运行 `batch_fix_all_aliases.py` 维护球队别名映射
 
 ---
 
@@ -385,9 +385,9 @@ async def _validate_match_data(self, match_data: dict) -> bool:
 ### 告警阈值
 
 建议设置：
-- ⚠️ 实体解析失败率 > 5%
-- ⚠️ 错误率 > 1%
-- ⚠️ 耗时 > 60 秒（可能网络问题）
+-  实体解析失败率 > 5%
+-  错误率 > 1%
+-  耗时 > 60 秒（可能网络问题）
 
 ---
 
@@ -404,10 +404,10 @@ async def _validate_match_data(self, match_data: dict) -> bool:
 
 ## 总结
 
-✅ **重复运行安全**：UPSERT 机制保证不会重复
-✅ **自动创建球队**：无法匹配时自动创建
-✅ **别名可维护**：多种工具支持别名管理
-✅ **数据质量保证**：多层验证和监控
+ **重复运行安全**：UPSERT 机制保证不会重复
+ **自动创建球队**：无法匹配时自动创建
+ **别名可维护**：多种工具支持别名管理
+ **数据质量保证**：多层验证和监控
 
 **推荐工作流程：**
 1. 定期运行 `ingest_football_data_v2.py`（增量更新）

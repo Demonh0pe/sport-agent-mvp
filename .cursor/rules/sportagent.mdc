@@ -2,53 +2,112 @@
 alwaysApply: true
 ---
 
+You are an AI code assistant working in a Python backend repo for a sports intelligence agent project (Sport Agent).
 
-You are an expert Python AI Backend Engineer specializing in Building LLM Agents, FastAPI services, and Data Pipelines.
+⚠ VERY IMPORTANT – ARCHITECTURE CONSTRAINTS
 
-Project Context:
-- Building an Enterprise-grade Sport Agent MVP.
-- Core Stack: Python 3.10+, FastAPI, Pydantic v2, PostgreSQL (Asyncpg), Redis, XGBoost.
-- Architecture: Domain-Driven Design (DDD) with clear separation of concerns (API -> Service -> Agent/Model -> Data).
+The project follows a layered architecture. All new code and refactors MUST respect these boundaries:
 
-Key Principles:
-- **Async First**: Always use `async/await` for I/O bound operations (DB, API calls).
-- **Type Safety**: Strict typing with Python `typing` and `Pydantic` v2. Use `ConfigDict(strict=True)`.
-- **TDD**: Write testable code. Prefer `pytest` for unit and integration tests.
-- **Robustness**: Comprehensive error handling and structured logging (Loguru).
+1) LAYERS
 
-Agent & LLM Development:
-- **Deterministic First**: Prioritize rule-based planners (ReAct) over pure LLM generation for stability.
-- **Tool Abstraction**: Define tools using Pydantic schemas for strict input validation.
-- **RAG**: Use vector search (pgvector) combined with keyword search. Handle metadata filtering strictly.
-- **Prompt Engineering**: Keep prompts in separate files/constants, treating them as code.
+- Interface/API Layer (FastAPI)
+  - Location: src/api/*
+  - Responsibility: HTTP routing, request/response models, auth, validation.
+  - NO business logic, NO direct DB access here.
 
-Data & ML Engineering:
-- **Schema First**: Define Pydantic models before implementing logic.
-- **Pipeline**: Use modular ETL scripts. Handle data anomalies gracefully.
-- **Prediction**: Use XGBoost for tabular sports data. Focus on feature engineering over complex deep learning architectures.
+- Agent Layer (Supervisor + Expert Agents)
+  - Location: src/supervisor/*, src/agent/*
+  - Technology: LangChain (agents, tools, memory), LLM-based orchestration.
+  - Responsibility:
+    - SupervisorAgent: task planning, tool/agent selection, result validation, final answer synthesis.
+    - ExpertAgents: DataStatsAgent, PredictionAgent, KnowledgeAgent, (future) RecommendationAgent.
+  - This is where LangChain agents live.
 
-Coding Style:
-- Follow PEP 8.
-- Use Google-style docstrings.
-- Organize imports: Stdlib -> Third-party -> Local.
-- Prefer Composition over Inheritance.
+- Tool Layer (LangChain Tools)
+  - Location: src/agent/tools/*
+  - Technology: LangChain Tools / StructuredTool + Pydantic models.
+  - Responsibility: Thin wrappers around Service layer.
+  - Tools ONLY:
+    - Parse structured input
+    - Call a Service method
+    - Return structured JSON/dicts
+  - NO business logic, NO direct DB/HTTP calls.
 
-Key Dependencies to Use:
-- fastapi, uvicorn
-- pydantic, pydantic-settings
-- sqlalchemy, asyncpg
-- redis
-- openai (or langchain/llamaindex if specified)
-- xgboost, pandas, numpy
-- loguru
-- pytest
+- Service Layer (Business Logic)
+  - Location: src/services/*
+  - Technology: pure Python, no LangChain.
+  - Responsibility:
+    - DataService: read/write competitions/teams/matches/standings via DB + football-data API.
+    - StatsService: compute team form, H2H, home/away performance, schedule density, etc.
+    - PredictService: build prediction features, call models (Elo / Poisson / ML), return probabilities + explanations.
+    - KnowledgeService: wrap the RAG pipeline behind a clean `answer(query)` style interface.
+  - Services MUST NOT import or depend on LangChain. They are re-usable from scripts, tests, pipelines.
 
-Error Handling:
-- Never use bare `except Exception:`. Catch specific errors.
-- Wrap external tool calls (API, DB) in try/except blocks with retries.
+- Knowledge / RAG Layer
+  - Location: src/knowledge/*
+  - Technology: LangChain RAG (Loader, Splitter, Embeddings, VectorStore, Retriever, LLM).
+  - Responsibility:
+    - Manage football rules/tactics/history knowledge base.
+    - Serve retrieval for KnowledgeService and KnowledgeAgent.
 
-When generating code:
-1. Think about the data structure (Schema) first.
-2. Implement the logic (Service/Agent).
-3. Expose via API (Router).
-4. Ensure all I/O is non-blocking.
+- Infra / Data Layer
+  - Location: src/infra/*, src/data_pipeline/*
+  - Technology: SQLAlchemy/PostgreSQL, pgvector or Chroma, Redis, HTTP clients, config, logging.
+  - Responsibility:
+    - DB connection, models, migrations, Redis clients, API clients to football-data.org, data ingestion scripts.
+  - MUST NOT depend on LangChain or LLMs.
+
+2) LANGCHAIN USAGE RULE
+
+- ALLOWED:
+  - src/supervisor/*
+  - src/agent/*
+  - src/knowledge/* (RAG pipeline)
+- DISALLOWED:
+  - src/services/*
+  - src/infra/*
+  - src/data_pipeline/*
+  - Any pure ML/model-training code under src/ml/*
+
+If you see LangChain imports in Service/Infra/DataPipeline, suggest refactoring:
+- Move that logic into Agent/Tool/RAG layer,
+- Keep Service/Infra as plain Python.
+
+3) LLM & RAG
+
+- LLM access is via a central `LLMClient` in src/shared/llm_client.py.
+- Do NOT scatter raw OpenAI/Ollama/vLLM calls around the codebase.
+- RAG:
+  - Uses embedding models (e.g., bge-m3/gte-*).
+  - VectorStore behind a VectorStoreClient abstraction (pgvector or Chroma).
+  - KnowledgeService consumes RAG, Agents call KnowledgeService via Tools.
+
+4) WHAT YOU SHOULD DO
+
+When editing or generating code in this repo:
+
+- Always decide which layer a change belongs to:
+  - Agent & reasoning → src/supervisor / src/agent
+  - Business logic / feature computation → src/services
+  - Data access / external APIs / DB models → src/infra or src/data_pipeline
+  - Knowledge / RAG plumbing → src/knowledge
+
+- For new capabilities:
+  1) Implement business logic in Service (NO LangChain).
+  2) Add a Tool in src/agent/tools to expose that Service to agents.
+  3) (If needed) Add/extend an ExpertAgent that uses this Tool.
+  4) Register the tool/agent in ExpertRegistry and update Supervisor’s prompt/agent if needed.
+
+- Prefer:
+  - Type hints everywhere
+  - Pydantic models for request/response and tool schemas
+  - Clear docstrings, small functions, single responsibility
+  - Structured outputs (dicts, models) instead of ad-hoc strings
+
+5) PRIMARY DESIGN DOC
+
+Before large refactors, align with the architecture described in docs/TECH_SPEC.md (Sport Agent technical spec). If code conflicts with that spec, prefer to move code TOWARDS the spec (multi-agent, layered, LangChain constrained to Agent/Tool/RAG).
+
+Your main goal:
+- Help keep the codebase consistent with this architecture.
+- When asked for implementation, generate code that fits into the correct layer and respects the LangChain usage boundaries.

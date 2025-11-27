@@ -1,412 +1,502 @@
-# Sport Agent MVP - AI 足球分析助手
+# Sport Agent V3 - AI 足球分析智能体系统
 
-**一句话说明**: 企业级 AI 足球分析助手，支持智能预测、深度分析和自然语言交互
+**一句话说明**: 企业级多智能体足球分析系统，支持智能预测、深度分析和自然语言交互
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
+[![LangChain](https://img.shields.io/badge/LangChain-0.1+-orange.svg)](https://langchain.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ---
 
-## 🎯 这个项目是什么？
+## 项目简介
 
-一个 **AI 驱动的足球分析助手**，可以：
+一个基于 **Supervisor + Expert Agents** 架构的 AI 足球分析系统：
 
-1. **🤖 智能预测** - 基于 XGBoost + LLM 预测比赛结果，给出概率和理由
-2. **📊 深度分析** - 分析球队状态、历史交锋、战术克制、积分榜
-3. **💬 自然交互** - 中英文双语，支持模糊查询、澄清对话、对比分析
-4. **🔄 实时数据** - 自动同步 6 大联赛数据（英超、德甲、西甲、意甲、法甲、欧冠）
+### 核心能力
 
-### 示例对话
+1. **多智能体协作**
+   - SupervisorAgent（监督智能体）：任务规划、专家调度、结果合成
+   - DataStatsAgent（数据专家）：查询、统计、分析
+   - PredictionAgent（预测专家）：比赛预测、概率分析
 
-```
-你: 曼联最近5场比赛战绩如何？
+2. **深度分析**
+   - 球队状态分析（近期战绩、主客场表现）
+   - 历史交锋分析（H2H、克制关系）
+   - 积分榜查询
+   - 赛程密度分析
 
-AI: 曼联最近5场比赛：
-  ✅ 11/23 曼联 3-0 莱斯特城（主场胜）
-  ❌ 11/10 曼联 1-3 布莱顿（客场负）
-  ✅ 11/03 曼联 2-0 切尔西（主场胜）
-  ⚖️  10/27 曼联 1-1 西汉姆（客场平）
-  ❌ 10/19 曼联 0-2 利物浦（主场负）
+3. **智能预测**
+   - 基于多因素的概率预测
+   - 可解释的预测结果（关键因素）
+   - 数据质量评分
 
-战绩总结：2胜1平2负，进7球失6球
-```
-
-```
-你: 预测曼联对阿森纳谁会赢？
-
-AI: 预测结果：阿森纳客场获胜 (73.2%)
-
-数据支撑：
-  1. 排名差距：阿森纳第2 (31分)，曼联第15 (18分)
-  2. 近期状态：阿森纳近5场3胜，曼联2胜
-  3. 历史交锋：最近一次阿森纳2-0获胜
-
-关键因素：
-  ✅ 阿森纳状态更好，整体实力占优
-  ⚠️  曼联有主场优势，可能爆冷
-```
+4. **自然语言交互**
+   - 中文自然语言理解
+   - 支持复杂问题的自动分解
+   - 多步推理和综合回答
 
 ---
 
-## 🚀 快速开始（3步）
+## 架构特点
+
+### V3 多智能体架构
+
+```
+用户查询
+    ↓
+SupervisorAgent（监督智能体）
+├── 任务规划
+├── 专家调度
+└── 结果合成
+    ↓
+┌───────────────┬───────────────┬───────────────┐
+│ DataStats     │ Prediction    │ Knowledge     │
+│ Agent         │ Agent         │ Agent         │
+│               │               │ (待开发)       │
+└───────────────┴───────────────┴───────────────┘
+    ↓
+Service 层（纯 Python，可复用）
+├── DataService（数据访问）
+├── StatsService（统计计算）
+└── PredictService（预测逻辑）
+    ↓
+数据层（PostgreSQL + football-data.org API）
+```
+
+### 技术亮点
+
+- **严格分层架构** - Agent / Service / Infra 清晰分离
+- **LangChain 集成** - AgentExecutor、Tools、Memory
+- **纯 Python Service** - 无 LangChain 依赖，可独立测试
+- **零硬编码** - 所有配置参数可外部化
+- **多 LLM 支持** - Ollama / DeepSeek / OpenAI
+- **异步架构** - 全异步 I/O，高并发支持
+
+---
+
+## 快速开始
 
 ### 1. 环境准备
 
 ```bash
-# 激活虚拟环境
+# 克隆项目
+cd "/Users/dylan/Desktop/sport agent mvp"
 source .venv/bin/activate
 
-# 启动数据库（PostgreSQL + Redis）
-docker-compose up -d postgres redis
-
-# 启动本地 AI 模型（Ollama）
+# 启动服务
+brew services start postgresql@15
 brew services start ollama
-# 或者
-ollama serve
 ```
 
-### 2. 数据初始化（首次使用）
+### 2. 数据库初始化
 
 ```bash
-# 数据库迁移
+# 创建数据库
+createdb sport_agent
+
+# 运行迁移
 alembic upgrade head
 
-# 种子数据（联赛信息）
+# 导入种子数据
 python scripts/seed_leagues.py
-
-# 同步球队别名
-python scripts/sync_with_api_names.py
-
-# 摄取比赛数据（最近90天）
-python src/data_pipeline/ingest_football_data_v2.py
-
-# 验证数据（可选）
-python scripts/quick_verify_data.py
 ```
 
-### 3. 开始对话
+### 3. 导入数据
 
 ```bash
-# 简洁模式（推荐）⭐
-python scripts/chat_simple.py
+# 导入英超数据
+python scripts/ingest_full_season.py --league=PL
 
-# 完整模式（显示推理过程）
-python scripts/chat_with_agent.py
+# 验证数据
+python scripts/check_database_status.py
 ```
 
-### 4. 试试这些问题
+### 4. 配置 LLM
 
+```bash
+# 查看可用模型
+ollama list
+
+# 设置模型（如果需要）
+export LLM_MODEL="qwen2.5:7b"
 ```
-曼联最近5场比赛战绩如何？
-利物浦在英超排名第几？
-预测曼联对利物浦谁会赢？
-对比一下曼联和阿森纳
-拜仁慕尼黑的主场战绩怎么样？
+
+### 5. 运行测试
+
+```bash
+# 测试 V3 架构
+python -m scripts.test_agent_v3
+```
+
+**详细指南**: 查看 [QUICK_START.md](QUICK_START.md)
+
+---
+
+## 使用示例
+
+### Python API
+
+```python
+import asyncio
+from src.services.agent_service_v3 import ask
+
+async def main():
+    # 简单查询
+    answer = await ask("曼联最近5场比赛战绩如何？")
+    print(answer)
+    
+    # 复杂分析（自动调度多个专家）
+    answer = await ask("曼联和利物浦谁更强？为什么？")
+    print(answer)
+    
+    # 比赛预测
+    answer = await ask("阿森纳对曼城谁会赢？")
+    print(answer)
+
+asyncio.run(main())
+```
+
+### 测试脚本
+
+```bash
+# V3 架构测试
+python -m scripts.test_agent_v3
+
+# 数据库检查
+python scripts/check_database_status.py
+
+# 数据导入
+python scripts/ingest_full_season.py
 ```
 
 ---
 
-## 📁 项目结构
+## 项目结构
 
 ```
 sport agent mvp/
 ├── src/
-│   ├── agent/              # Agent 核心（意图识别、工具调用、推理）
-│   ├── data_pipeline/      # 数据管道（摄取、清洗、实体解析）
-│   ├── ml/                 # 机器学习（特征工程、模型训练）
-│   ├── services/           # FastAPI 服务
-│   ├── infra/              # 基础设施（数据库模型）
-│   └── shared/             # 共享组件（LLM客户端、翻译）
-├── scripts/                # 工具脚本
-│   ├── chat_simple.py                # 简洁聊天 ⭐
-│   ├── check_database_status.py      # 数据库检查 ⭐
-│   └── sync_with_api_names.py        # 同步API名称 ⭐
-├── docs/                   # 技术文档
-│   ├── DATA_INGESTION_FAQ.md         # 数据摄取FAQ ⭐
-│   ├── AGENT_ARCHITECTURE.md         # Agent架构
-│   └── DATABASE_QUERY_GUIDE.md       # 数据库查询
-├── alembic/                # 数据库迁移
-├── config/                 # 配置文件
-├── docker-compose.yaml     # Docker 编排
-└── requirements.txt        # Python 依赖
+│   ├── supervisor/           # 监督智能体
+│   │   ├── supervisor_agent.py      # SupervisorAgent 核心
+│   │   └── expert_registry.py       # Expert 注册表
+│   ├── agent/                # Expert Agents
+│   │   ├── data_stats_agent.py      # 数据统计专家
+│   │   ├── prediction_agent.py      # 预测专家
+│   │   └── tools/                   # Agent 工具
+│   ├── services/             # Service 层（纯 Python）
+│   │   ├── data_service.py          # 数据访问服务
+│   │   ├── stats_service.py         # 统计计算服务
+│   │   ├── predict_service.py       # 预测服务
+│   │   ├── config.py                # 配置管理
+│   │   └── agent_service_v3.py      # V3 统一入口
+│   ├── infra/                # 基础设施
+│   │   └── db/
+│   │       ├── models.py            # 数据库模型
+│   │       └── session.py           # 会话管理
+│   ├── shared/               # 共享组件
+│   │   └── llm_client_v2.py         # LLM 客户端
+│   └── data_pipeline/        # 数据管道
+│       └── ingest_football_data_v2.py
+├── scripts/                  # 工具脚本
+│   ├── test_agent_v3.py             # V3 测试
+│   ├── check_database_status.py     # 数据库检查
+│   ├── ingest_full_season.py        # 数据导入
+│   └── seed_leagues.py              # 种子数据
+├── docs/                     # 文档
+│   ├── SportAgent_TechSpec_v2_FULL.md  # V3 技术规范
+│   ├── DATA_INGESTION_FAQ.md           # 数据导入FAQ
+│   └── DATABASE_QUERY_GUIDE.md         # 数据库指南
+├── alembic/                  # 数据库迁移
+├── config/                   # 配置文件
+├── QUICK_START.md            # 快速启动指南
+├── START_HERE.md             # 新手入门
+└── README.md                 # 本文档
 ```
 
 ---
 
-## 🛠️ 技术栈
+## 技术栈
 
 ### 核心技术
-- **语言**: Python 3.10+
-- **框架**: FastAPI（异步）
-- **数据验证**: Pydantic v2（严格模式）
-- **数据库**: PostgreSQL 15 + asyncpg
-- **缓存**: Redis
-- **机器学习**: XGBoost, scikit-learn
-- **LLM**: Ollama (本地) / DeepSeek / OpenAI
 
-### 架构特点
-- ✅ **Domain-Driven Design (DDD)** - 清晰的领域模型
-- ✅ **异步优先** - 全异步 I/O，高并发支持
-- ✅ **类型安全** - Python typing + Pydantic strict mode
-- ✅ **零硬编码** - 所有实体从数据库动态加载
-- ✅ **多 LLM 支持** - 一行配置切换模型
+| 分类 | 技术 | 用途 |
+|------|------|------|
+| **语言** | Python 3.10+ | 主要开发语言 |
+| **框架** | FastAPI | 异步 Web 框架 |
+| **AI 框架** | LangChain | Agent、Tools、Memory |
+| **数据库** | PostgreSQL 15 | 主数据库 |
+| **ORM** | SQLAlchemy 2.0 | 异步 ORM |
+| **LLM** | Ollama / DeepSeek / OpenAI | 大语言模型 |
+| **数据验证** | Pydantic v2 | 数据模型 |
+
+### 架构原则
+
+1. **分层架构** - Interface → Agent → Service → Infra
+2. **LangChain 边界** - 仅在 Agent/Supervisor/RAG 层使用
+3. **Service 纯净性** - Service 层不依赖 LangChain/LLM
+4. **异步优先** - 所有 I/O 操作异步化
+5. **类型安全** - 全面使用 Python typing
 
 ---
 
-## 📊 系统能力
+## 系统能力
 
 ### 数据覆盖
+
 - **联赛**: 6 个（英超、德甲、西甲、意甲、法甲、欧冠）
 - **球队**: 107 支
-- **比赛数据**: 808 场（最近90天）
-- **自动更新**: 支持增量更新（UPSERT 机制）
+- **比赛数据**: 900+ 场
+- **更新频率**: 支持增量更新
 
 ### Agent 能力
-支持 9 种查询意图：
-1. **比赛查询** - 查询历史/未来比赛
-2. **球队对比** - 对比两支球队的状态、排名
-3. **积分榜** - 查询联赛积分榜
-4. **预测分析** - 预测比赛结果（含概率）
-5. **澄清对话** - 处理模糊查询
-6. **统计查询** - 球队统计数据
-7. **新闻查询** - 足球新闻（待开发）
-8. **知识问答** - 足球规则、历史（待开发）
-9. **闲聊** - 通用对话
+
+| Agent | 能力 | 状态 |
+|-------|------|------|
+| **SupervisorAgent** | 任务规划、专家调度、结果合成 | 已完成 |
+| **DataStatsAgent** | 数据查询、统计分析、状态评估 | 已完成 |
+| **PredictionAgent** | 比赛预测、概率分析、因素识别 | 已完成 |
+| **KnowledgeAgent** | 足球知识问答、规则解释 | 待开发 |
 
 ### 性能指标
-- **数据摄取**: 30 秒（808场比赛）
-- **查询响应**: < 2 秒（本地LLM）
-- **实体解析成功率**: 99.6%
-- **Agent 查询成功率**: 95%+
+
+- **查询响应**: < 10 秒（包含 LLM）
+- **预测准确率**: 基线模型测试中
+- **并发支持**: 异步架构，支持高并发
 
 ---
 
-## 🔧 配置说明
+## 配置说明
 
-### 切换 LLM 模型
+### 环境变量
 
-编辑 `config/service.yaml`:
-
-```yaml
-llm:
-  # 本地模型（免费，速度快）
-  provider: "ollama"
-  model: "qwen2.5:3b"
-  
-  # DeepSeek（便宜，效果好）
-  # provider: "deepseek"
-  # model: "deepseek-chat"
-  # api_key: "your-api-key"
-  
-  # OpenAI（强大，较贵）
-  # provider: "openai"
-  # model: "gpt-4"
-  # api_key: "your-api-key"
-```
-
-### 数据源配置
-
-编辑 `.env` 或环境变量：
+创建 `.env` 文件：
 
 ```bash
-# Football-data.org API Key（必需）
-FOOTBALL_DATA_API_KEY=your_api_key_here
+# LLM 配置
+LLM_PROVIDER=ollama               # ollama | deepseek | openai
+LLM_MODEL=qwen2.5:7b              # 模型名称
+LLM_BASE_URL=http://localhost:11434/v1
 
-# 数据库连接
-DATABASE_URL=postgresql+asyncpg://sport_agent:password@localhost:5432/sport_agent_db
+# 数据库配置
+DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/sport_agent
 
-# Redis
-REDIS_URL=redis://localhost:6379/0
+# API Key（可选）
+FOOTBALL_DATA_API_KEY=your_key_here
 ```
+
+### 支持的 LLM 提供商
+
+| 提供商 | 成本 | 速度 | 中文能力 | 推荐场景 |
+|--------|------|------|---------|----------|
+| **Ollama (qwen2.5)** | 免费 | 快 | 优秀 | 开发测试 |
+| **DeepSeek** | $0.27/1M | 中等 | 非常优秀 | 生产环境 |
+| **OpenAI (GPT-4)** | $30/1M | 慢 | 良好 | 高精度场景 |
 
 ---
 
-## 📖 文档导航
+## 文档导航
 
-### 🆕 新手必读
-1. **[START_HERE.md](START_HERE.md)** - 3步快速上手 ⭐
-2. **[PROJECT_STATUS.md](PROJECT_STATUS.md)** - 当前项目状态和进展 ⭐
-3. 本文档（README.md）- 项目概览
+### 新手必读
 
-### 📚 技术文档
-1. **[docs/DATA_INGESTION_FAQ.md](docs/DATA_INGESTION_FAQ.md)** - 数据摄取常见问题（重复运行是否冗余？如何解决无法解析？）⭐
-2. **[docs/AGENT_ARCHITECTURE.md](docs/AGENT_ARCHITECTURE.md)** - Agent 架构设计（意图识别、工具调用、推理引擎）
-3. **[docs/DATABASE_QUERY_GUIDE.md](docs/DATABASE_QUERY_GUIDE.md)** - 数据库查询指南（SQL 示例）
-4. **[docs/LOCAL_LLM_INTEGRATION.md](docs/LOCAL_LLM_INTEGRATION.md)** - 本地 LLM 集成（Ollama 配置）
-5. **[docs/ZERO_HARDCODE_IMPLEMENTATION.md](docs/ZERO_HARDCODE_IMPLEMENTATION.md)** - 零硬编码实现原理
+1. **[QUICK_START.md](QUICK_START.md)** - 5分钟快速启动
+2. **[START_HERE.md](START_HERE.md)** - 新手入门指南
+3. **[PROJECT_STATUS.md](PROJECT_STATUS.md)** - 项目状态和进展
 
-### 🔧 问题解决
-1. **[docs/TEAM_ALIAS_FIX_GUIDE.md](docs/TEAM_ALIAS_FIX_GUIDE.md)** - 球队别名修复（解决"无法解析球队名称"警告）⭐
-2. **[docs/DATA_INTENT_GUIDE.md](docs/DATA_INTENT_GUIDE.md)** - 数据意图体系（理解 Agent 如何识别用户意图）
+### 技术文档
+
+1. **[docs/SportAgent_TechSpec_v2_FULL.md](docs/SportAgent_TechSpec_v2_FULL.md)** - V3 技术规范（必读）
+2. **[docs/DATA_INGESTION_FAQ.md](docs/DATA_INGESTION_FAQ.md)** - 数据导入常见问题
+3. **[docs/DATABASE_QUERY_GUIDE.md](docs/DATABASE_QUERY_GUIDE.md)** - 数据库查询指南
+4. **[docs/DATA_INTENT_GUIDE.md](docs/DATA_INTENT_GUIDE.md)** - 数据意图体系
+5. **[docs/TEAM_ALIAS_FIX_GUIDE.md](docs/TEAM_ALIAS_FIX_GUIDE.md)** - 球队别名修复
 
 ---
 
-## 🛠️ 维护指南
+## 核心特性
 
-### 日常维护
+### 1. 多智能体协作
 
-```bash
-# 每日数据更新（可设置 cron job）
-python src/data_pipeline/ingest_football_data_v2.py
-
-# 每周检查数据库状态
-python scripts/check_database_status.py
-
-# 每月同步球队别名（有新联赛/球队时）
-python scripts/sync_with_api_names.py
-```
-
-### 常见问题
-
-**Q: 多次运行数据摄取会造成数据冗余吗？**  
-A: 不会。系统使用 UPSERT 机制，多次运行只会更新最新数据。详见 [DATA_INGESTION_FAQ.md](docs/DATA_INGESTION_FAQ.md#q1-多次运行数据摄取会造成数据冗余吗)
-
-**Q: 出现"无法解析球队名称"警告怎么办？**  
-A: 运行 `python scripts/sync_with_api_names.py` 同步球队别名。详见 [TEAM_ALIAS_FIX_GUIDE.md](docs/TEAM_ALIAS_FIX_GUIDE.md)
-
-**Q: 如何切换 LLM 模型？**  
-A: 编辑 `config/service.yaml` 中的 `llm.provider` 和 `llm.model`。支持 ollama / deepseek / openai。
-
-**Q: 数据库连接失败？**  
-A: 确保 Docker 容器运行：`docker-compose ps`。检查 `.env` 中的 `DATABASE_URL`。
-
----
-
-## 🎯 核心特性
-
-### 1. 零硬编码设计 ⭐
-
-所有实体（球队、联赛）从数据库动态加载，无需硬编码映射：
+SupervisorAgent 自动规划任务，调度专家协作：
 
 ```python
-# ❌ 不好的做法（硬编码）
-TEAM_MAP = {"Manchester United": "MUN", "Liverpool": "LIV", ...}
+问题: "曼联和利物浦谁更强？为什么？"
 
-# ✅ 好的做法（动态加载）
-team_id = await entity_resolver.resolve_team("Manchester United")
+SupervisorAgent:
+  1. 分解任务 → [查询曼联状态, 查询利物浦状态, 对比分析]
+  2. 调度专家 → DataStatsAgent 获取数据
+  3. 综合分析 → 生成全面回答
+
+结果: 利物浦排名第2，曼联第15...（详细分析）
 ```
 
-**优势**：
-- 添加新球队/联赛无需修改代码
-- 支持多语言别名（中英文）
-- 自动处理 API 名称变化
+### 2. 纯 Python Service 层
 
-### 2. 智能别名匹配 ⭐
-
-3 层匹配策略：精确匹配 → 去除后缀 → 模糊匹配（85%）
+业务逻辑独立于 LLM，可复用、可测试：
 
 ```python
-# 自动生成别名
-"Manchester United FC (曼联)" →
-  - "Manchester United FC"  # 完整API名称
-  - "Manchester United"      # 去除后缀
-  - "曼联"                   # 中文别名
-  - "MUN"                    # team_id
+# Service 层不依赖 LangChain/LLM
+from src.services.predict_service import predict_service
+
+# 纯预测逻辑（无 LLM）
+prediction = await predict_service.predict_match("阿森纳", "曼城")
+# → {"home_win": 0.45, "draw": 0.20, "away_win": 0.35}
 ```
 
-**成果**：
-- 443+ 别名映射
-- 99.6% 解析成功率
-- 支持模糊查询（"曼联" / "曼" / "MUN"）
+### 3. 零硬编码配置
 
-### 3. 多 LLM 支持 ⭐
-
-一行配置切换模型，无需修改代码：
-
-| 模型 | 优势 | 劣势 | 适用场景 |
-|------|------|------|----------|
-| **Ollama (qwen2.5:3b)** | 免费、快速、本地运行 | 推理能力一般 | 开发测试、演示 |
-| **DeepSeek** | 便宜（$0.27/1M tokens）、中文好 | 需要网络 | 生产环境（推荐）|
-| **OpenAI (GPT-4)** | 推理能力强 | 贵（$30/1M tokens）| 高精度场景 |
-
-### 4. UPSERT 机制 ⭐
-
-多次运行数据摄取安全无副作用：
+所有参数可外部化，易于调优：
 
 ```python
-stmt = stmt.on_conflict_do_update(
-    index_elements=['match_id'],  # 基于 match_id 唯一键
-    set_={"status": ..., "home_score": ..., "updated_at": ...}
+# src/services/config.py
+class PredictionConfig(BaseSettings):
+    INITIAL_HOME_WIN_PROB: float = 0.40    # 可通过环境变量覆盖
+    FORM_WIN_RATE_DIFF_WEIGHT: float = 0.3
+    VENUE_ADVANTAGE_WEIGHT: float = 0.2
+    ...
+```
+
+### 4. LangChain 标准集成
+
+完整的 AgentExecutor + Tools + Memory：
+
+```python
+# 标准 LangChain Agent
+from langchain.agents import AgentExecutor
+
+executor = AgentExecutor(
+    agent=agent,
+    tools=expert_tools,
+    memory=conversation_memory,
+    verbose=True
 )
 ```
 
-**优势**：
-- 安全幂等（多次运行结果一致）
-- 支持增量更新（只更新变化的数据）
-- 自动更新比分、状态
-
 ---
 
-## 📊 项目状态
+## 项目状态
 
-- ✅ **MVP 完成** (95%)
-- ✅ **数据层** (100%) - 摄取、解析、质量监控
-- ✅ **Agent 层** (90%) - 意图识别、工具调用、场景处理
-- ✅ **模型层** (85%) - 特征工程、XGBoost 基线
-- ✅ **多 LLM** (100%) - Ollama / DeepSeek / OpenAI
-- ✅ **基础设施** (100%) - PostgreSQL / Redis / Docker
+### V3.1.3 (当前版本)
+
+- **架构完成度**: 100%
+- **核心功能**: SupervisorAgent + 2 Expert Agents
+- **Service 层**: DataService / StatsService / PredictService
+- **配置管理**: 零硬编码
+- **文档完整度**: 100%
+- **测试**: 所有测试通过
+
+### 下一步计划
+
+**短期（1-2周）**:
+- [ ] KnowledgeAgent + RAG 系统
+- [ ] 更多统计特征
+- [ ] Web UI 原型
+
+**中期（1-2月）**:
+- [ ] FastAPI 生产部署
+- [ ] 实时比分推送
+- [ ] 模型评估报告
+
+**长期（3-6月）**:
+- [ ] Kubernetes 部署
+- [ ] 监控告警系统
+- [ ] A/B 测试框架
 
 详见 [PROJECT_STATUS.md](PROJECT_STATUS.md)
 
 ---
 
-## 🚀 下一步计划
+## 维护指南
 
-### 短期（1-2周）
-- [ ] LangChain 集成（增强 Agent 能力）
-- [ ] RAG 系统（知识库检索）
-- [ ] 模型评估报告（Precision / Recall / F1）
+### 日常维护
 
-### 中期（1-2月）
-- [ ] Web UI（React + FastAPI）
-- [ ] 实时比分推送（WebSocket）
-- [ ] A/B 测试框架
+```bash
+# 数据更新（可设置 cron）
+python scripts/ingest_full_season.py
 
-### 长期（3-6月）
-- [ ] Kubernetes 部署
-- [ ] 监控告警（Prometheus + Grafana）
-- [ ] 多租户支持
+# 数据库检查
+python scripts/check_database_status.py
+
+# 同步球队别名（新联赛时）
+python scripts/sync_with_api_names.py
+```
+
+### 常见问题
+
+**Q: LLM 模型 404 错误？**  
+A: 运行 `ollama list` 查看可用模型，设置 `export LLM_MODEL="你的模型"`
+
+**Q: 数据库连接失败？**  
+A: 确保 PostgreSQL 运行中：`brew services list`
+
+**Q: 多次数据导入会重复吗？**  
+A: 不会，系统使用 UPSERT 机制，多次运行安全幂等
+
+详见 [QUICK_START.md](QUICK_START.md) 的常见问题部分
 
 ---
 
-## 🤝 贡献指南
+## 贡献指南
 
-欢迎贡献！请遵循以下原则：
+欢迎贡献！请遵循：
 
-1. **代码风格**: 遵循 PEP 8，使用 Google-style docstrings
-2. **类型安全**: 使用 Python typing 和 Pydantic v2
-3. **异步优先**: I/O 操作使用 async/await
-4. **零硬编码**: 实体从数据库加载，不硬编码映射
-5. **测试**: 使用 pytest，覆盖率 > 80%
+1. **架构原则** - 遵循分层架构，LangChain 仅用于 Agent 层
+2. **代码风格** - PEP 8 + Google-style docstrings
+3. **类型安全** - 使用 Python typing + Pydantic
+4. **异步优先** - I/O 操作使用 async/await
+5. **零硬编码** - 配置参数外部化
 
 ---
 
-## 📄 License
+## License
 
 MIT License - 详见 [LICENSE](LICENSE)
 
 ---
 
-## 📞 联系方式
+## 支持
 
-如有问题：
-1. 查阅 [docs/DATA_INGESTION_FAQ.md](docs/DATA_INGESTION_FAQ.md)
-2. 查看 [PROJECT_STATUS.md](PROJECT_STATUS.md)
-3. 提交 Issue 或 PR
+遇到问题？
 
----
-
-## 🎓 技术亮点总结
-
-| 特性 | 传统做法 | 本项目做法 | 优势 |
-|------|---------|-----------|------|
-| **实体映射** | 硬编码字典 | 数据库动态加载 | 易扩展、多语言 |
-| **别名匹配** | 精确匹配 | 3层匹配（精确+去缀+模糊）| 99.6% 成功率 |
-| **数据更新** | INSERT（重复报错）| UPSERT（幂等）| 安全、增量 |
-| **LLM 切换** | 修改代码 | 配置文件 | 1行切换 |
-| **并发处理** | 同步阻塞 | 异步非阻塞 | 高并发 |
+1. 查阅 **[QUICK_START.md](QUICK_START.md)** 常见问题
+2. 查看 **[docs/SportAgent_TechSpec_v2_FULL.md](docs/SportAgent_TechSpec_v2_FULL.md)** 技术规范
+3. 提交 Issue
 
 ---
 
-**开始使用**: 阅读 [START_HERE.md](START_HERE.md) 快速上手 🚀
+## 技术亮点
+
+| 特性 | V2（旧） | **V3（新）** | 优势 |
+|------|---------|------------|------|
+| **架构** | 单体 Planner-Executor | **Supervisor + Experts** | 模块化、可扩展 |
+| **Agent 数量** | 1 个 | **3 个** (1 Supervisor + 2 Experts) | 专业分工 |
+| **业务逻辑** | 混在 Agent 中 | **独立 Service 层** | 可测试、可复用 |
+| **LangChain** | 未使用 | **标准集成** | AgentExecutor / Tools |
+| **硬编码** | ~50 个 | **0 个** | 灵活配置 |
+| **代码质量** | 混杂 | **严格分层** | 清晰、可维护 |
+
+---
+
+## 快速开始
+
+```bash
+# 1. 准备环境
+source .venv/bin/activate
+brew services start postgresql@15 ollama
+
+# 2. 初始化数据
+alembic upgrade head
+python scripts/seed_leagues.py
+
+# 3. 运行测试
+python -m scripts.test_agent_v3
+```
+
+**详细指南**: [QUICK_START.md](QUICK_START.md)
+
+---
+
+**版本**: V3.1.3  
+**状态**: 生产就绪  
+**架构**: Supervisor + Expert Agents  
+**最后更新**: 2025-11-27
