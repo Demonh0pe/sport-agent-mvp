@@ -262,15 +262,20 @@ class DataService:
             before_date: 截止日期（不包含该日期之后的比赛）
             
         Returns:
-            比赛列表（按时间倒序）
+            比赛列表（按时间倒序，包含关联球队信息）
         """
+        from sqlalchemy.orm import selectinload
+        
         team = await self.get_team(team_name)
         if not team:
             logger.warning(f"Team not found: {team_name}")
             return []
         
         async with get_async_session() as session:
-            query = select(Match).where(
+            query = select(Match).options(
+                selectinload(Match.home_team),  # 预加载主队信息
+                selectinload(Match.away_team)   # 预加载客队信息
+            ).where(
                 and_(
                     or_(
                         Match.home_team_id == team.team_id,
@@ -303,15 +308,19 @@ class DataService:
             season: 赛季（如 "2024"），默认当前赛季
             
         Returns:
-            积分榜列表（按排名排序）
+            积分榜列表（按排名排序，包含关联球队信息）
         """
+        from sqlalchemy.orm import selectinload
+        
         comp = await self.get_competition(competition)
         if not comp:
             logger.warning(f"Competition not found: {competition}")
             return []
         
         async with get_async_session() as session:
-            query = select(Standing).where(Standing.league_id == comp.league_id)
+            query = select(Standing).options(
+                selectinload(Standing.team)  # 预加载球队信息
+            ).where(Standing.league_id == comp.league_id)
             
             if season:
                 query = query.where(Standing.season == season)

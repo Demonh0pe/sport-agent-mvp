@@ -43,6 +43,11 @@ class Match(Base):
     # 关键升级：存储 AI 分析后的比赛标签
     tags = Column(JSON, nullable=True) 
     
+    # 关系定义（关键：用于查询时预加载）
+    home_team = relationship("Team", foreign_keys=[home_team_id])
+    away_team = relationship("Team", foreign_keys=[away_team_id])
+    league = relationship("League")
+    
     # ✅✅✅ 补回严谨性约束 (数据质量门禁)
     __table_args__ = (
         CheckConstraint('home_score >= 0', name='check_home_pos'),
@@ -61,6 +66,7 @@ class Standing(Base):
     league_id = Column(String, ForeignKey("leagues.league_id"), index=True)
     team_id = Column(String, ForeignKey("teams.team_id"), index=True)
     season = Column(String, index=True)
+    team_name = Column(String, nullable=False)  # 冗余字段，方便查询
     
     # 排名信息
     position = Column(Integer, nullable=False)
@@ -76,6 +82,10 @@ class Standing(Base):
     
     # 积分
     points = Column(Integer, default=0)
+    
+    # 关系定义
+    team = relationship("Team")
+    league = relationship("League")
     
     # 时间戳
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

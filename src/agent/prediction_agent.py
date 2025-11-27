@@ -16,8 +16,8 @@ from __future__ import annotations
 import logging
 from typing import Dict, Any, Optional, TYPE_CHECKING
 
-from langchain.agents import AgentExecutor, create_openai_functions_agent
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.agents import AgentExecutor, create_react_agent
+from langchain_core.prompts import PromptTemplate
 from langchain.tools import StructuredTool
 from pydantic import BaseModel, Field
 
@@ -73,7 +73,7 @@ class PredictionAgent:
     def _create_tools(self):
         """创建预测工具"""
         
-        async def predict_match(home_team: str, away_team: str) -> str:
+        async def predict_match_impl(home_team: str, away_team: str) -> str:
             """
             预测比赛结果
             
@@ -128,23 +128,33 @@ class PredictionAgent:
                 logger.error(f"predict_match failed: {e}")
                 return f"预测失败：{str(e)}"
         
-        # 使用 StructuredTool 包装
+        # 使用 StructuredTool 包装，并指定 args_schema
         tools = [
             StructuredTool.from_function(
-                coroutine=predict_match,
+                coroutine=predict_match_impl,
                 name="predict_match",
-                description="预测两队比赛的胜平负结果，输出概率和影响因素"
+                description=(
+                    "预测两队比赛的胜平负结果。\n"
+                    "输入：主队名称（home_team）和客队名称（away_team）\n"
+                    "输出：预测结果、概率分布、置信度和关键影响因素"
+                ),
+                args_schema=PredictMatchInput
             )
         ]
         
         return tools
     
-    def _create_prompt(self) -> ChatPromptTemplate:
-        """创建 Agent Prompt"""
-        system_message = """你是预测专家，擅长分析足球比赛的胜负走势。
+    def _create_prompt(self) -> PromptTemplate:
+        """创建 Agent Prompt（ReAct 格式）"""
+        template = """你是预测专家，擅长分析足球比赛的胜负走势。
 
-你可以使用以下工具：
+可用工具：
+
+{tools}
+
+工具说明：
 - predict_match: 预测比赛的胜平负结果和概率
+  参数: home_team（主队名称）, away_team（客队名称）
 
 工作要求：
 1. 从用户问题中提取主队和客队名称
@@ -163,19 +173,32 @@ class PredictionAgent:
 - 如果用户问题中没有明确的主客队，询问澄清
 - 如果数据质量低，明确告知用户
 - 避免绝对化的表述（如"一定会赢"）
-"""
+
+使用以下格式回答：
+
+Question: 用户的问题
+Thought: 我需要做什么
+Action: 工具名称
+Action Input: {{"参数名": "参数值"}}
+Observation: 工具返回结果
+... (重复直到有答案)
+Thought: 我现在知道最终答案了
+Final Answer: 最终答案
+
+可用工具名称：{tool_names}
+
+开始！
+
+Question: {input}
+Thought: {agent_scratchpad}"""
         
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_message),
-            ("human", "{input}"),
-            MessagesPlaceholder(variable_name="agent_scratchpad")
-        ])
+        prompt = PromptTemplate.from_template(template)
         
         return prompt
     
     def _create_agent_executor(self) -> AgentExecutor:
-        """创建 Agent Executor"""
-        agent = create_openai_functions_agent(
+        """创建 Agent Executor（使用 ReAct 模式，兼容本地LLM）"""
+        agent = create_react_agent(
             llm=self._llm,
             tools=self._tools,
             prompt=self._prompt
@@ -185,9 +208,10 @@ class PredictionAgent:
             agent=agent,
             tools=self._tools,
             verbose=True,
-            max_iterations=3,
-            early_stopping_method="generate",
-            handle_parsing_errors=True
+            max_iterations=8,  # 预测通常需要更多步骤
+            early_stopping_method="force",  # 使用 "force" 而不是已废弃的 "generate"
+            handle_parsing_errors=True,
+            return_intermediate_steps=True
         )
         
         return executor

@@ -15,10 +15,10 @@ import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
-from langchain.agents import AgentExecutor, create_openai_functions_agent
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.agents import AgentExecutor, create_react_agent
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate
 from langchain_core.messages import SystemMessage, HumanMessage
-from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationBufferMemory  # TODO: Deprecated - 迁移到新的 Memory API
 
 from src.shared.llm_client_v2 import get_llm_client
 
@@ -70,7 +70,7 @@ class SupervisorAgent:
         
         logger.info(f"SupervisorAgent initialized with {len(expert_tools)} expert tools")
     
-    def _create_supervisor_prompt(self) -> ChatPromptTemplate:
+    def _create_supervisor_prompt(self) -> PromptTemplate:
         """
         创建 Supervisor 的 System Prompt
         
@@ -118,19 +118,64 @@ class SupervisorAgent:
    - 如果工具返回错误或无结果，承认限制
    - 超出系统能力的问题，礼貌拒绝
 
-**回答风格**：
-- 专业但不生硬
-- 数据驱动，有理有据
-- 简洁明了，重点突出
-- 中文回答，用户友好
-"""
+**核心原则（绝对禁止违反）**：
+
+1. **严格禁止编造数据**：
+   - 不允许虚构任何比赛结果、日期、比分
+   - 不允许基于"常识"或"假设"给出数据
+   - 所有数据必须来自工具返回的真实结果
+
+2. **必须调用工具获取数据**：
+   - 对任何需要数据的问题，必须先调用相应工具
+   - 不要试图从用户问题中"猜测"答案
+   - 工具返回什么就说什么，不要添油加醋
+
+3. **诚实面对数据缺失**：
+   - 如果工具返回空结果，直接告知："数据库中没有该数据"
+   - 如果调用失败，明确说明："查询失败"
+   - 不要用模糊语言掩盖问题
+
+4. **简洁直接的回答**：
+   - 直接给出工具返回的数据
+   - 不要过度解释或编造背景
+   - 保持客观，不要主观臆断
+
+**错误示例（禁止）**：
+用户："比萨最近战绩"
+错误回答："比萨队在最近的意甲比赛中表现不佳，他们输给了尤文图斯0-2..."
+（这是编造的！）
+
+**正确示例**：
+用户："比萨最近战绩"
+→ 调用 data_stats_expert("比萨")
+→ 工具返回：无数据
+→ 正确回答："抱歉，数据库中没有比萨队的比赛数据。"
+
+记住：真实性 > 一切
+
+使用以下格式回答：
+
+Question: 用户的问题
+Thought: 我需要做什么
+Action: 工具名称
+Action Input: 工具输入
+Observation: 工具返回结果
+... (重复直到有答案)
+Thought: 我现在知道最终答案了
+Final Answer: 基于真实数据的最终答案
+
+可用工具：
+{tools}
+
+工具名称：
+{tool_names}
+
+开始！
+
+Question: {input}
+Thought: {agent_scratchpad}"""
         
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_message),
-            MessagesPlaceholder(variable_name="chat_history", optional=True),
-            ("human", "{input}"),
-            MessagesPlaceholder(variable_name="agent_scratchpad")
-        ])
+        prompt = PromptTemplate.from_template(system_message)
         
         return prompt
     
@@ -141,14 +186,17 @@ class SupervisorAgent:
         Returns:
             配置好的 AgentExecutor
         """
-        # 创建 Agent
-        agent = create_openai_functions_agent(
+        # 创建 ReAct Agent
+        agent = create_react_agent(
             llm=self._llm,
             tools=self._expert_tools,
             prompt=self._prompt
         )
         
         # 创建 Memory（如果启用）
+        # TODO: ConversationBufferMemory 已被 LangChain 标记为 deprecated
+        # 未来升级时需迁移到新的 RunnableConfig/ChatMessageHistory API
+        # 参考：https://python.langchain.com/docs/modules/memory/
         memory = None
         if self._enable_memory:
             from langchain.memory import ConversationBufferMemory
@@ -164,8 +212,8 @@ class SupervisorAgent:
             tools=self._expert_tools,
             memory=memory,  # 添加记忆
             verbose=True,
-            max_iterations=5,  # 保持5次迭代确保任务完成
-            early_stopping_method="generate",
+            max_iterations=10,  # 增加到10次迭代,确保复杂任务能完成
+            early_stopping_method="force",  # 修复: 使用 "force" 替代已废弃的 "generate"
             handle_parsing_errors=True,
             return_intermediate_steps=True
         )
