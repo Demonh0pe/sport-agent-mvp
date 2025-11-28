@@ -217,25 +217,25 @@ class StatsTool:
         }.get(venue, "")
         
         report_lines = [
-            f"📊 {team_name} ({team_id}) {venue_desc}统计分析",
+            f"[统计] {team_name} ({team_id}) {venue_desc}统计分析",
             f"═" * 50,
             f"",
-            f"📈 基础数据（最近 {stats['total_matches']} 场）：",
+            f"[数据] 基础数据（最近 {stats['total_matches']} 场）：",
             f"  - 胜/平/负：{stats['wins']} / {stats['draws']} / {stats['losses']}",
             f"  - 胜率：{stats.get('win_rate', 0):.1f}%",
             f"  - 总进球：{stats['goals_scored']} 球（场均 {stats.get('avg_goals_scored', 0):.2f}）",
             f"  - 总失球：{stats['goals_conceded']} 球（场均 {stats.get('avg_goals_conceded', 0):.2f}）",
             f"  - 净胜球：{stats.get('goal_difference', 0):+d}",
             f"",
-            f"🛡️ 防守数据：",
+            f"[防守] 防守数据：",
             f"  - 零封场次：{stats['clean_sheets']} 场",
             f"  - 零封率：{stats['clean_sheets'] / stats['total_matches'] * 100:.1f}%",
             f"",
-            f"⚽ 进攻数据：",
+            f"[进攻] 进攻数据：",
             f"  - 未进球场次：{stats['failed_to_score']} 场",
             f"  - 破门率：{(stats['total_matches'] - stats['failed_to_score']) / stats['total_matches'] * 100:.1f}%",
             f"",
-            f"🔥 近期状态：",
+            f"[状态] 近期状态：",
             f"  - 最近5场：{' '.join(stats['recent_form'])}",
         ]
         

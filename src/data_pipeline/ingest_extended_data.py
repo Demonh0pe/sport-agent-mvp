@@ -160,7 +160,7 @@ class ExtendedDataIngester:
                     logger.info(f"  {entry['position']:2}. {team_name:30} - {entry['points']} 分")
             
             await db.commit()
-            logger.info(f"✅ {competition_code} 积分榜数据入库完成")
+            logger.info(f"[完成] {competition_code} 积分榜数据入库完成")
     
     # ==========================================
     # 2. 球员数据摄取
@@ -268,7 +268,7 @@ class ExtendedDataIngester:
                 logger.info(f"  {player_entry.get('shirtNumber', '--'):2} | {player_entry['name']:30} | {position}")
             
             # await db.commit()
-            logger.info(f"✅ 球队 {team_data['name']} 的阵容数据入库完成")
+            logger.info(f"[完成] 球队 {team_data['name']} 的阵容数据入库完成")
     
     # ==========================================
     # 3. 射手榜数据摄取
@@ -358,7 +358,7 @@ class ExtendedDataIngester:
                 logger.info(f"  {rank:2}. {player_info['name']:30} | {entry['goals']:2} 球 | {entry.get('assists', 0):2} 助")
             
             # await db.commit()
-            logger.info(f"✅ {competition_code} 射手榜数据入库完成")
+            logger.info(f"[完成] {competition_code} 射手榜数据入库完成")
 
 
 # ==========================================

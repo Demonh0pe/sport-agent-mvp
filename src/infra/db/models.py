@@ -37,7 +37,7 @@ class Match(Base):
     home_score = Column(Integer, nullable=True)
     away_score = Column(Integer, nullable=True)
     
-    # ✅✅✅ 补回丢失的关键字段：结果 (H/D/A)
+    # [重要] 补回丢失的关键字段：结果 (H/D/A)
     result = Column(String(1), nullable=True) 
     
     # 关键升级：存储 AI 分析后的比赛标签
@@ -48,7 +48,7 @@ class Match(Base):
     away_team = relationship("Team", foreign_keys=[away_team_id])
     league = relationship("League")
     
-    # ✅✅✅ 补回严谨性约束 (数据质量门禁)
+    # [重要] 补回严谨性约束 (数据质量门禁)
     __table_args__ = (
         CheckConstraint('home_score >= 0', name='check_home_pos'),
         CheckConstraint('away_score >= 0', name='check_away_pos'),

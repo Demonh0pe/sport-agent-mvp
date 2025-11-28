@@ -17,7 +17,7 @@ from typing import List, TYPE_CHECKING
 from langchain.tools import Tool
 
 if TYPE_CHECKING:
-    from src.shared.llm_client import LLMClient
+    from src.shared.llm_client_v2 import LLMClient
 
 logger = logging.getLogger(__name__)
 

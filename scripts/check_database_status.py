@@ -45,7 +45,7 @@ async def check_database_connection():
 async def get_table_counts(db: AsyncSession):
     """获取各表的记录数"""
     print("=" * 80)
-    print("📊 数据库表统计")
+    print("[统计] 数据库表统计")
     print("=" * 80)
     
     tables = {

@@ -43,7 +43,7 @@ class MatchTool:
                 return f"系统提示：未在数据库中找到名为“{team_name}”的球队。（可能是数据库暂无数据，或名称拼写错误）"
 
             # 2. 查库 - 优先返回已完成的比赛，不足时补充未来的比赛
-            # ✅ 只返回来自API的真实数据，过滤掉Seed/Mock数据
+            # [重要] 只返回来自API的真实数据，过滤掉Seed/Mock数据
             async with AsyncSessionLocal() as session:
                 # 先查询已完成的比赛（按日期降序）
                 # 为了避免SQL兼容性问题，我们查询更多数据，然后在Python层面过滤
@@ -57,7 +57,7 @@ class MatchTool:
                 result = await session.execute(finished_stmt)
                 all_finished = list(result.scalars().all())
                 
-                # ✅ 在Python层面过滤：只保留包含'ImportedFromAPI'标签的真实数据
+                # [过滤] 在Python层面过滤：只保留包含'ImportedFromAPI'标签的真实数据
                 matches = [
                     m for m in all_finished 
                     if m.tags and 'ImportedFromAPI' in m.tags
@@ -75,7 +75,7 @@ class MatchTool:
                     result = await session.execute(fixture_stmt)
                     all_fixtures = list(result.scalars().all())
                     
-                    # ✅ 同样在Python层面过滤
+                    # [过滤] 同样在Python层面过滤
                     filtered_fixtures = [
                         m for m in all_fixtures
                         if m.tags and 'ImportedFromAPI' in m.tags
@@ -87,7 +87,7 @@ class MatchTool:
                 return f"数据库中暂无 {team_name} 的近期比赛记录。"
 
             # 3. 数据转文本
-            lines = [f"📊 {team_name} ({team_id}) 近 {limit} 场比赛记录："]
+            lines = [f"[统计] {team_name} ({team_id}) 近 {limit} 场比赛记录："]
             
             for m in matches:
                 score_str = f"{m.home_score} : {m.away_score}" if m.status == "FINISHED" else "未开赛"

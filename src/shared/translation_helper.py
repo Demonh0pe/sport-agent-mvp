@@ -18,7 +18,9 @@ from typing import Dict, Optional, List
 from dataclasses import dataclass, field
 import re
 
-from src.shared.llm_client import llm_client
+from src.shared.llm_client_v2 import get_llm_client
+
+llm_client = get_llm_client()
 
 logger = logging.getLogger(__name__)
 

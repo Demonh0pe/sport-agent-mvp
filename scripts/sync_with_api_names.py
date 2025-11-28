@@ -145,7 +145,7 @@ LEAGUE_SPECIFIC_NAMES = {
 async def sync_api_names():
     """同步 API 官方名称到数据库"""
     print("=" * 80)
-    print("🔄 同步 API 官方名称到数据库")
+    print("[同步] 同步 API 官方名称到数据库")
     print("=" * 80)
     
     async with AsyncSessionLocal() as db:
@@ -191,7 +191,7 @@ async def sync_api_names():
 async def verify_sync():
     """验证同步效果"""
     print("=" * 80)
-    print("✅ 验证同步效果")
+    print("[验证] 验证同步效果")
     print("=" * 80)
     
     from src.data_pipeline.entity_resolver import entity_resolver
@@ -245,10 +245,10 @@ async def verify_sync():
         
         if team_id:
             team_info = await entity_resolver.get_team_info(team_id)
-            print(f"  ✅ {external_name:40} -> {team_id:6}")
+            print(f"  [OK] {external_name:40} -> {team_id:6}")
             success += 1
         else:
-            print(f"  ❌ {external_name:40} -> 无法解析")
+            print(f"  [失败] {external_name:40} -> 无法解析")
             failed += 1
     
     print(f"\n测试结果: {success} 成功 / {failed} 失败 ({success/(success+failed)*100:.1f}%)")
@@ -258,7 +258,7 @@ async def verify_sync():
 
 async def main():
     """主函数"""
-    print("\n🔄 API 名称同步工具\n")
+    print("\n[同步] API 名称同步工具\n")
     
     # 步骤 1: 同步名称
     await sync_api_names()
@@ -267,7 +267,7 @@ async def main():
     await verify_sync()
     
     print("\n" + "=" * 80)
-    print("✅ 同步完成！")
+    print("[完成] 同步完成！")
     print("=" * 80)
     print("\n下一步:")
     print("  运行数据摄取脚本验证:")

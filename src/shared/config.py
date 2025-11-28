@@ -53,7 +53,7 @@ class NewsServiceConfig(BaseModel):
     default_window_hours: int
     max_items: int
 
-# ✅ 新增：LLM 配置模型
+# [新增] LLM 配置模型
 class LLMConfig(BaseModel):
     provider: str
     base_url: str
@@ -61,7 +61,7 @@ class LLMConfig(BaseModel):
     model: str
     temperature: float = 0.7
 
-# ✅ 修改：把 LLM 配置加入 AgentConfig
+# [修改] 把 LLM 配置加入 AgentConfig
 class AgentConfig(BaseModel):
     max_turns: int
     enable_trace: bool

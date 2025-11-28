@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, List, Literal, Optional, Union  # 👈 确保引入 Optional
+from typing import Any, Dict, List, Literal, Optional, Union  # 确保引入 Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -14,7 +14,7 @@ class AgentQuery(BaseModel):
 
     user_id: Optional[str] = None
     query: str
-    # ✅ 修复：将 str | None 改为 Optional[str]
+    # [修复] 将 str | None 改为 Optional[str]
     preferred_phase: Optional[str] = Field(default="T-24h") 
     strategy_preference: Literal["balanced", "conservative", "aggressive"] = "balanced"
 

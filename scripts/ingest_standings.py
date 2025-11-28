@@ -42,7 +42,7 @@ async def fetch_and_save_standings(league_code: str):
             # 2. 解析数据
             standings_data = data.get("standings", [])
             if not standings_data:
-                print(f"  ⚠️  {league_code} 没有积分榜数据")
+                print(f"  [警告] {league_code} 没有积分榜数据")
                 return 0
             
             # 通常第一个是总积分榜（TOTAL），还有主场/客场积分榜
@@ -73,7 +73,7 @@ async def fetch_and_save_standings(league_code: str):
                     team = result.scalar_one_or_none()
                     
                     if not team:
-                        print(f"  ⚠️  找不到球队: {team_name}")
+                        print(f"  [警告] 找不到球队: {team_name}")
                         continue
                     
                     # 先删除旧记录，再插入新记录（简单策略）
@@ -107,14 +107,14 @@ async def fetch_and_save_standings(league_code: str):
                     saved_count += 1
                 
                 await session.commit()
-                print(f"  ✅ {league_code} 积分榜保存成功: {saved_count} 支球队")
+                print(f"  [完成] {league_code} 积分榜保存成功: {saved_count} 支球队")
                 return saved_count
                 
         except httpx.HTTPStatusError as e:
-            print(f"  ❌ API 错误: {e.response.status_code} - {e.response.text}")
+            print(f"  [错误] API 错误: {e.response.status_code} - {e.response.text}")
             return 0
         except Exception as e:
-            print(f"  ❌ 错误: {e}")
+            print(f"  [错误] 错误: {e}")
             return 0
 
 
@@ -142,7 +142,7 @@ async def main():
         await asyncio.sleep(3)  # 避免 API 限流
     
     print("\n" + "="*70)
-    print(f"✅ 完成！共导入 {total_saved} 条积分榜记录")
+    print(f"[完成] 共导入 {total_saved} 条积分榜记录")
     print("="*70)
 
 

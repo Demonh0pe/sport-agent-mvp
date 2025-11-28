@@ -25,7 +25,7 @@ from src.services.data_service import data_service
 from src.services.stats_service import stats_service
 
 if TYPE_CHECKING:
-    from src.shared.llm_client import LLMClient
+    from src.shared.llm_client_v2 import LLMClient
 
 logger = logging.getLogger(__name__)
 
@@ -374,12 +374,12 @@ class DataStatsAgent:
 
 ## 重要规则
 
-- ✅ 工具返回什么就说什么，绝不编造数据
-- ✅ 支持中英文队名，如 "曼联" 或 "Manchester United"
-- ✅ 联赛名称可用中文（"英超"）或英文（"Premier League"）
-- ❌ 绝不使用占位符（XX、YY）
-- ❌ 绝不假设或猜测数据
-- ❌ 如果工具返回空数据，直接说"未找到数据"
+- [OK] 工具返回什么就说什么，绝不编造数据
+- [OK] 支持中英文队名，如 "曼联" 或 "Manchester United"
+- [OK] 联赛名称可用中文（"英超"）或英文（"Premier League"）
+- [禁止] 绝不使用占位符（XX、YY）
+- [禁止] 绝不假设或猜测数据
+- [禁止] 如果工具返回空数据，直接说"未找到数据"
 
 ## 响应格式
 

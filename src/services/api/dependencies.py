@@ -3,24 +3,18 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from src.services.api.services.agent import AgentService
-from src.services.api.services.agent_v2 import AgentServiceV2
+from src.services.agent_service_v3 import AgentServiceV3, agent_service_v3
 from src.shared.config import Settings, get_settings
 
 # 1. 获取全局配置的依赖
 def get_app_settings() -> Settings:
     return get_settings()
 
-# 2. 获取 AgentService 的依赖 (单例模式) - 旧版本
-@lru_cache(maxsize=1)
-def get_agent_service() -> AgentService:
-    # 依赖注入链：Settings -> AgentService
-    settings = get_settings()
-    return AgentService(settings=settings)
-
-# 3. 获取 AgentServiceV2 的依赖 (单例模式) - 新版本
-@lru_cache(maxsize=1)
-def get_agent_service_v2() -> AgentServiceV2:
-    """获取 v2.0 版本的 Agent 服务（统一架构）"""
-    settings = get_settings()
-    return AgentServiceV2(settings=settings)
+# 2. 获取 AgentServiceV3 的依赖 (使用全局单例)
+def get_agent_service_v3() -> AgentServiceV3:
+    """
+    获取 v3.0 版本的 Agent 服务（Supervisor + Expert Agents 架构）
+    
+    使用全局单例以保持会话记忆和状态
+    """
+    return agent_service_v3

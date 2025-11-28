@@ -15,9 +15,9 @@ from src.data_pipeline.ingest_football_data_v2 import FootballDataIngester
 async def main():
     """获取完整赛季数据（回溯180天）"""
     print("=" * 80)
-    print("🏈 完整赛季数据摄取")
+    print("[任务] 完整赛季数据摄取")
     print("=" * 80)
-    print("\n⏳ 这可能需要几分钟时间，请耐心等待...\n")
+    print("\n[等待] 这可能需要几分钟时间，请耐心等待...\n")
     
     ingester = FootballDataIngester()
     
@@ -27,8 +27,8 @@ async def main():
         days_back=180  # 回溯180天（约6个月）
     )
     
-    print("\n✅ 完成！现在您应该有更完整的赛季数据了。")
-    print("💡 运行以下命令验证: python scripts/inspect_data.py --expected")
+    print("\n[完成] 现在您应该有更完整的赛季数据了。")
+    print("[提示] 运行以下命令验证: python scripts/inspect_data.py --expected")
 
 
 if __name__ == "__main__":

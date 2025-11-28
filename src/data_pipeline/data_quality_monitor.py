@@ -266,15 +266,15 @@ class DataQualityMonitor:
     def print_report(self):
         """打印报告"""
         print("\n" + "="*60)
-        print("📊 数据质量监控报告")
+        print("[统计] 数据质量监控报告")
         print("="*60)
-        print(f"⏰ 检查时间: {self.report['timestamp']}")
-        print(f"🏥 健康状态: {self.report['summary']['health_status'].upper()}")
-        print(f"⚠️  告警数量: {self.report['summary']['total_alerts']}")
+        print(f"[时间] 检查时间: {self.report['timestamp']}")
+        print(f"[健康] 健康状态: {self.report['summary']['health_status'].upper()}")
+        print(f"[警告] 告警数量: {self.report['summary']['total_alerts']}")
         print()
         
         # 关键指标
-        print("📈 关键指标:")
+        print("[数据] 关键指标:")
         metrics = self.report['metrics']
         print(f"  - 总比赛数: {metrics.get('total_matches', 0)}")
         print(f"  - 最后更新: {metrics.get('last_update_hours_ago', 'N/A')} 小时前")
@@ -283,17 +283,17 @@ class DataQualityMonitor:
         
         # 告警信息
         if self.report['alerts']:
-            print("🚨 告警详情:")
+            print("[告警] 告警详情:")
             for i, alert in enumerate(self.report['alerts'], 1):
-                severity_emoji = {
-                    "error": "❌",
-                    "warning": "⚠️",
-                    "info": "ℹ️"
+                severity_text = {
+                    "error": "[错误]",
+                    "warning": "[警告]",
+                    "info": "[信息]"
                 }
-                emoji = severity_emoji.get(alert['severity'], '📌')
-                print(f"  {i}. {emoji} [{alert['severity'].upper()}] {alert['message']}")
+                text = severity_text.get(alert['severity'], '[标记]')
+                print(f"  {i}. {text} [{alert['severity'].upper()}] {alert['message']}")
         else:
-            print("✅ 无告警信息，数据质量良好！")
+            print("[OK] 无告警信息，数据质量良好！")
         
         print("="*60 + "\n")
 
@@ -308,7 +308,7 @@ async def main():
     import json
     with open("data_quality_report.json", "w", encoding="utf-8") as f:
         json.dump(monitor.report, f, indent=2, ensure_ascii=False)
-    print("📄 详细报告已保存到: data_quality_report.json")
+    print("[文件] 详细报告已保存到: data_quality_report.json")
 
 
 if __name__ == "__main__":

@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field
 from src.services.predict_service import predict_service
 
 if TYPE_CHECKING:
-    from src.shared.llm_client import LLMClient
+    from src.shared.llm_client_v2 import LLMClient
 
 logger = logging.getLogger(__name__)
 

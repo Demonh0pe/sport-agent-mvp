@@ -19,7 +19,7 @@ async def inspect_recent_matches():
     """查看最近的比赛，包含详细信息"""
     async with AsyncSessionLocal() as db:
         print("\n" + "=" * 100)
-        print("📊 最近20场比赛详细信息")
+        print("[统计] 最近20场比赛详细信息")
         print("=" * 100)
         
         # 获取比赛和球队信息
@@ -47,15 +47,15 @@ async def inspect_recent_matches():
             score = f"{match.home_score or '?'}:{match.away_score or '?'}"
             
             # 检查数据来源
-            source = "✅ API" if match.tags and 'ImportedFromAPI' in match.tags else "❌ 未知"
+            source = "[OK] API" if match.tags and 'ImportedFromAPI' in match.tags else "[未知] 未知"
             
             # 状态颜色标记
             status_display = {
-                "FINISHED": "✅ 已完成",
-                "FIXTURE": "⏰ 未开始",
-                "LIVE": "🔴 进行中",
-                "POSTPONED": "⏸️  延期",
-                "CANCELLED": "❌ 取消"
+                "FINISHED": "[OK] 已完成",
+                "FIXTURE": "[等待] 未开始",
+                "LIVE": "[直播] 进行中",
+                "POSTPONED": "[延期] 延期",
+                "CANCELLED": "[取消] 取消"
             }.get(match.status, match.status)
             
             print(f"{date_str:<12} {league_name[:12]:<15} {home_team_name[:22]:<25} "
@@ -137,11 +137,11 @@ async def inspect_specific_match(match_id: str = None):
             match = result.scalar_one_or_none()
         
         if not match:
-            print(f"\n❌ 未找到比赛: {match_id}")
+            print(f"\n[错误] 未找到比赛: {match_id}")
             return
         
         print("\n" + "=" * 80)
-        print("🔍 比赛详细信息")
+        print("[检查] 比赛详细信息")
         print("=" * 80)
         
         # 获取球队和联赛信息
@@ -171,21 +171,21 @@ async def inspect_specific_match(match_id: str = None):
         
         # 数据来源判断
         is_api_data = match.tags and 'ImportedFromAPI' in match.tags
-        print(f"\n数据来源:    {'✅ 官方API (football-data.org)' if is_api_data else '❌ 未知来源（需检查）'}")
+        print(f"\n数据来源:    {'[OK] 官方API (football-data.org)' if is_api_data else '[错误] 未知来源（需检查）'}")
         
         # 数据质量检查
         print("\n数据质量检查:")
         checks = []
-        checks.append(("✅" if match.match_id else "❌", "比赛ID存在"))
-        checks.append(("✅" if match.league_id else "❌", "联赛ID存在"))
-        checks.append(("✅" if match.home_team_id and home_team else "⚠️", f"主队信息完整"))
-        checks.append(("✅" if match.away_team_id and away_team else "⚠️", f"客队信息完整"))
-        checks.append(("✅" if match.match_date else "❌", "比赛时间存在"))
+        checks.append(("[OK]" if match.match_id else "[错误]", "比赛ID存在"))
+        checks.append(("[OK]" if match.league_id else "[错误]", "联赛ID存在"))
+        checks.append(("[OK]" if match.home_team_id and home_team else "[警告]", f"主队信息完整"))
+        checks.append(("[OK]" if match.away_team_id and away_team else "[警告]", f"客队信息完整"))
+        checks.append(("[OK]" if match.match_date else "[错误]", "比赛时间存在"))
         
         if match.status == "FINISHED":
-            checks.append(("✅" if match.home_score is not None and match.away_score is not None else "❌", 
+            checks.append(("[OK]" if match.home_score is not None and match.away_score is not None else "[错误]", 
                           "已完成比赛有比分"))
-            checks.append(("✅" if match.result else "⚠️", "已完成比赛有结果"))
+            checks.append(("[OK]" if match.result else "[警告]", "已完成比赛有结果"))
         
         for status, desc in checks:
             print(f"  {status} {desc}")
@@ -197,7 +197,7 @@ async def inspect_data_sources():
     """检查数据来源分布"""
     async with AsyncSessionLocal() as db:
         print("\n" + "=" * 80)
-        print("📌 数据来源统计")
+        print("[标记] 数据来源统计")
         print("=" * 80)
         
         # 获取所有比赛
@@ -214,11 +214,11 @@ async def inspect_data_sources():
         unknown_count = len(unknown_data)
         
         print(f"\n总比赛数:           {total:>6} 场")
-        print(f"✅ 来自官方API:      {api_count:>6} 场 ({api_count/total*100:.1f}%)" if total > 0 else "N/A")
-        print(f"❌ 来源未知:         {unknown_count:>6} 场 ({unknown_count/total*100:.1f}%)" if total > 0 else "N/A")
+        print(f"[OK] 来自官方API:      {api_count:>6} 场 ({api_count/total*100:.1f}%)" if total > 0 else "N/A")
+        print(f"[未知] 来源未知:         {unknown_count:>6} 场 ({unknown_count/total*100:.1f}%)" if total > 0 else "N/A")
         
         if unknown_count > 0:
-            print("\n⚠️  警告: 发现非API来源数据，请检查以下比赛:")
+            print("\n[警告] 发现非API来源数据，请检查以下比赛:")
             print(f"\n{'比赛ID':<35} {'主队 vs 客队':<40} {'日期':<12}")
             print("-" * 90)
             for match in unknown_data[:10]:  # 只显示前10条
@@ -229,7 +229,7 @@ async def inspect_data_sources():
             if unknown_count > 10:
                 print(f"\n... 还有 {unknown_count - 10} 场未显示")
         else:
-            print("\n✅ 所有数据均来自官方API，数据可信！")
+            print("\n[OK] 所有数据均来自官方API，数据可信！")
         
         print("=" * 80)
 
@@ -238,7 +238,7 @@ async def compare_with_expected():
     """与预期数据量对比"""
     async with AsyncSessionLocal() as db:
         print("\n" + "=" * 80)
-        print("📊 数据完整性检查 - 与预期对比")
+        print("[统计] 数据完整性检查 - 与预期对比")
         print("=" * 80)
         
         # 预期的赛季数据量（参考值）
@@ -264,21 +264,21 @@ async def compare_with_expected():
             
             if current == 0:
                 completion = "0%"
-                assessment = "❌ 无数据"
+                assessment = "[错误] 无数据"
             else:
                 completion_rate = (current / expected) * 100
                 completion = f"{completion_rate:.1f}%"
                 
                 if completion_rate >= 80:
-                    assessment = "✅ 数据充足"
+                    assessment = "[OK] 数据充足"
                 elif completion_rate >= 50:
-                    assessment = "⚠️  数据较少"
+                    assessment = "[警告] 数据较少"
                 else:
-                    assessment = "❌ 数据不足"
+                    assessment = "[错误] 数据不足"
             
             print(f"{league_id:<10} {current:<12} {expected:<15} {completion:<10} {assessment}")
         
-        print("\n💡 提示:")
+        print("\n[提示]:")
         print("   - 如果是赛季中期，数据量低于预期是正常的")
         print("   - 如果数据量为0或很少，建议重新运行数据摄取")
         print("   - 命令: python src/data_pipeline/ingest_football_data_v2.py")
@@ -303,7 +303,7 @@ async def main():
     if not any([args.recent, args.leagues, args.match, args.sources, args.expected, args.all]):
         args.all = True
     
-    print("\n🔍 正在检查数据库...")
+    print("\n[检查] 正在检查数据库...")
     
     if args.all or args.sources:
         await inspect_data_sources()
@@ -320,8 +320,8 @@ async def main():
     if args.match:
         await inspect_specific_match(args.match)
     
-    print("\n✅ 数据检查完成！")
-    print("\n💡 如果发现数据问题，可以:")
+    print("\n[完成] 数据检查完成！")
+    print("\n[提示] 如果发现数据问题，可以:")
     print("   1. 重新运行数据摄取: python src/data_pipeline/ingest_football_data_v2.py")
     print("   2. 检查API密钥配置: config/service.yaml")
     print("   3. 查看完整文档: docs/DATA_INGESTION_FAQ.md")
